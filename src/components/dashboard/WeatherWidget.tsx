@@ -21,12 +21,42 @@ function WeatherIcon({ icon, className }: { icon: string; className?: string }) 
   return <Cloud className={`${cls} text-gray-300`} />;
 }
 
+async function fetchByCity(city: string, apiKey: string, language: string): Promise<WeatherData> {
+  const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric&lang=${language}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`${res.status}`);
+  const data = await res.json();
+  return {
+    temp: Math.round(data.main.temp),
+    description: data.weather[0].description,
+    icon: data.weather[0].icon,
+    city: data.name || city
+  };
+}
+
+async function fetchByCoords(
+  lat: number,
+  lon: number,
+  apiKey: string,
+  language: string
+): Promise<WeatherData> {
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=${language}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`${res.status}`);
+  const data = await res.json();
+  return {
+    temp: Math.round(data.main.temp),
+    description: data.weather[0].description,
+    icon: data.weather[0].icon,
+    city: data.name
+  };
+}
+
 export default function WeatherWidget() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [city, setCity] = useState(readSettings().weatherCity);
-  const [locale, setLocale] = useState(readSettings().locale);
+  const [settings, setSettings] = useState(readSettings);
 
   useEffect(() => {
     async function fetchWeather() {
@@ -35,32 +65,30 @@ export default function WeatherWidget() {
 
       const rawKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY ?? "";
       const apiKey = rawKey.replace(/[\r\n]/g, "").trim();
-      const language = locale.startsWith("uk") ? "uk" : "en";
+      const language = settings.locale.startsWith("uk") ? "uk" : "en";
 
       if (!apiKey || apiKey === "your_openweathermap_api_key") {
-        setWeather({
-          temp: 18,
-          description: language === "uk" ? "Хмарно" : "Cloudy",
-          icon: "03d",
-          city
-        });
         setLoading(false);
         return;
       }
 
       try {
-        const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric&lang=${language}`;
-        const res = await fetch(url);
-        if (!res.ok) {
-          throw new Error(`${res.status}`);
+        if (settings.weatherMode === "manual" && settings.weatherCity) {
+          const data = await fetchByCity(settings.weatherCity, apiKey, language);
+          setWeather(data);
+        } else {
+          // auto — geolocation
+          const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
+          );
+          const data = await fetchByCoords(
+            pos.coords.latitude,
+            pos.coords.longitude,
+            apiKey,
+            language
+          );
+          setWeather(data);
         }
-        const data = await res.json();
-        setWeather({
-          temp: Math.round(data.main.temp),
-          description: data.weather[0].description,
-          icon: data.weather[0].icon,
-          city: data.name || city
-        });
       } catch {
         setError(true);
       } finally {
@@ -69,27 +97,22 @@ export default function WeatherWidget() {
     }
 
     fetchWeather();
-  }, [city, locale]);
+  }, [settings]);
 
   useEffect(() => {
-    function syncFromSettings() {
-      const settings = readSettings();
-      setCity(settings.weatherCity);
-      setLocale(settings.locale);
+    function sync() {
+      setSettings(readSettings());
     }
-
-    window.addEventListener(SETTINGS_EVENT_NAME, syncFromSettings);
-    window.addEventListener("storage", syncFromSettings);
-
+    window.addEventListener(SETTINGS_EVENT_NAME, sync);
+    window.addEventListener("storage", sync);
     return () => {
-      window.removeEventListener(SETTINGS_EVENT_NAME, syncFromSettings);
-      window.removeEventListener("storage", syncFromSettings);
+      window.removeEventListener(SETTINGS_EVENT_NAME, sync);
+      window.removeEventListener("storage", sync);
     };
   }, []);
 
   if (loading) return <Loader2 className="w-4 h-4 text-gray-500 animate-spin" />;
-  if (error) return <span className="text-red-400 text-xs">weather err</span>;
-  if (!weather) return null;
+  if (error || !weather) return null;
 
   return (
     <div className="flex items-center gap-1.5 bg-gray-800/50 rounded-xl px-2.5 py-1.5 border border-gray-700/50">

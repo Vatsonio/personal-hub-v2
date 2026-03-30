@@ -7,6 +7,7 @@ import {
   type AppLocale,
   type AppTheme,
   type TimeFormat,
+  type WeatherMode,
   readSettings,
   saveSettings
 } from "@/lib/settings";
@@ -14,6 +15,7 @@ import {
 export default function SettingsPage() {
   const [theme, setTheme] = useState<AppTheme>(DEFAULT_SETTINGS.theme);
   const [locale, setLocale] = useState<AppLocale>(DEFAULT_SETTINGS.locale);
+  const [weatherMode, setWeatherMode] = useState<WeatherMode>(DEFAULT_SETTINGS.weatherMode);
   const [weatherCity, setWeatherCity] = useState(DEFAULT_SETTINGS.weatherCity);
   const [timeFormat, setTimeFormat] = useState<TimeFormat>(DEFAULT_SETTINGS.timeFormat);
   const [saved, setSaved] = useState(false);
@@ -22,17 +24,13 @@ export default function SettingsPage() {
     const settings = readSettings();
     setTheme(settings.theme);
     setLocale(settings.locale);
+    setWeatherMode(settings.weatherMode);
     setWeatherCity(settings.weatherCity);
     setTimeFormat(settings.timeFormat);
   }, []);
 
   function handleSave() {
-    saveSettings({
-      theme,
-      locale,
-      weatherCity: weatherCity.trim() || DEFAULT_SETTINGS.weatherCity,
-      timeFormat
-    });
+    saveSettings({ theme, locale, weatherMode, weatherCity: weatherCity.trim(), timeFormat });
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
   }
@@ -40,6 +38,7 @@ export default function SettingsPage() {
   function handleReset() {
     setTheme(DEFAULT_SETTINGS.theme);
     setLocale(DEFAULT_SETTINGS.locale);
+    setWeatherMode(DEFAULT_SETTINGS.weatherMode);
     setWeatherCity(DEFAULT_SETTINGS.weatherCity);
     setTimeFormat(DEFAULT_SETTINGS.timeFormat);
     saveSettings(DEFAULT_SETTINGS);
@@ -85,14 +84,28 @@ export default function SettingsPage() {
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm text-gray-300">Місто для погоди</span>
-            <input
-              value={weatherCity}
-              onChange={(e) => setWeatherCity(e.target.value)}
-              placeholder="Наприклад: Yarmolyntsi"
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-violet-500"
-            />
+            <span className="text-sm text-gray-300">Погода</span>
+            <select
+              value={weatherMode}
+              onChange={(e) => setWeatherMode(e.target.value as WeatherMode)}
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500"
+            >
+              <option value="auto">Авто (геолокація)</option>
+              <option value="manual">Вручну (місто)</option>
+            </select>
           </label>
+
+          {weatherMode === "manual" && (
+            <label className="space-y-2">
+              <span className="text-sm text-gray-300">Місто</span>
+              <input
+                value={weatherCity}
+                onChange={(e) => setWeatherCity(e.target.value)}
+                placeholder="Наприклад: Lviv"
+                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-violet-500"
+              />
+            </label>
+          )}
 
           <label className="space-y-2">
             <span className="text-sm text-gray-300">Формат часу</span>
