@@ -1,6 +1,6 @@
 services:
   migrate:
-    image: ghcr.io/ionetwofarqlater-sudo/personal-hub:latest
+    image: ghcr.io/ionetwofarqlater-sudo/personal-hub-v2:latest
     restart: no
     command: node scripts/migrate.mjs
     environment:
@@ -12,7 +12,7 @@ services:
       - internal
 
   app:
-    image: ghcr.io/ionetwofarqlater-sudo/personal-hub:latest
+    image: ghcr.io/ionetwofarqlater-sudo/personal-hub-v2:latest
     restart: unless-stopped
     environment:
       - NODE_ENV=production

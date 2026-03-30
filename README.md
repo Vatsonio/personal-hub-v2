@@ -1,164 +1,53 @@
-# 🚀 Personal Hub — MVP 1
+# Personal Hub
 
-Персональний модульний хаб з авторизацією та дашбордом.
+Self-hosted personal productivity dashboard for personal use and friends.
 
-## Стек
+## Stack
 
-- **Next.js 14** (App Router)
-- **Tailwind CSS**
-- **Lucide React**
-- **Supabase** (Auth: Email + Google + GitHub + MFA TOTP)
+- **Next.js 15** (App Router) + **React 19** + TypeScript
+- **Tailwind CSS** + Lucide React
+- **NextAuth.js v5** (credentials, JWT)
+- **PostgreSQL 16** (direct SQL via `postgres.js`, no ORM)
+- **MinIO** (S3-compatible file storage)
+- **Resend** (transactional email)
+- **Cloudflare Tunnel** (zero-config HTTPS)
+- **Docker** + docker-compose
 
-## Швидкий старт
-
-### 1. Встановлення залежностей
+## Quick Start (local)
 
 ```bash
 npm install
+cp .env.compose.example .env.compose   # fill in values
+npm run dev                             # http://localhost:3000
 ```
 
-### 2. Налаштування змінних середовища
+## Deployment (Docker / Portainer)
+
+1. Build image via GitHub Actions (push to `main` triggers ghcr.io build)
+2. In Portainer → Stacks → Add stack → paste `docker-compose.yml`
+3. Set all env vars from `.env.compose.example`
+4. Deploy
+
+The `migrate` service runs `migrations/001_init.sql` on first start automatically.
+
+## Environment Variables
+
+See `.env.compose.example` for all required variables.
+
+| Variable           | Description                                |
+| ------------------ | ------------------------------------------ |
+| `AUTH_SECRET`      | NextAuth secret (random string)            |
+| `AUTH_URL`         | Public URL (via Cloudflare Tunnel)         |
+| `DATABASE_URL`     | PostgreSQL connection string               |
+| `RESEND_API_KEY`   | Resend API key for emails                  |
+| `ADMIN_EMAIL`      | First user with this email gets admin role |
+| `MAX_ACTIVE_USERS` | Max allowed active users (0 = unlimited)   |
+
+## Commands
 
 ```bash
-cp .env.local.example .env.local
-```
-
-Заповни `.env.local`:
-
-- `NEXT_PUBLIC_SUPABASE_URL` — URL твого Supabase проєкту
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Anon Key з Supabase
-- `NEXT_PUBLIC_OPENWEATHER_API_KEY` — ключ з openweathermap.org (безкоштовно)
-- `NEXT_PUBLIC_SITE_URL` — базовий URL сайту (`http://localhost:3000` для локалки)
-
-### 3. Налаштування Supabase
-
-У Supabase Dashboard:
-
-1. **Authentication → Providers** → увімкни Google і GitHub (додай Client ID та Secret)
-2. **Authentication → URL Configuration**:
-   - Site URL: `http://localhost:3000` (dev) або твій Vercel URL
-   - Redirect URLs: додай `http://localhost:3000/auth/callback`
-3. (Опційно) **Authentication → Multi-Factor Auth** → дозволити TOTP
-
-### 3.1 OTP-коди для реєстрації/відновлення
-
-- Реєстрація та відновлення підтримують підтвердження **по коду з email** (без обовʼязкового переходу за посиланням).
-- Для гарних листів відкрий **Authentication → Email Templates** і встав:
-  - `supabase/email-templates/signup-otp.html` у шаблон підтвердження signup
-  - `supabase/email-templates/recovery-otp.html` у шаблон recovery/reset
-- У шаблонах лишай `{{ .Token }}` (код) і `{{ .ConfirmationURL }}` (fallback-посилання).
-
-### 4. Запуск
-
-```bash
-npm run dev
-```
-
-### 5. P0 перевірки безпеки
-
-```bash
-npm run check:p0
-```
-
-Команда перевіряє:
-
-- у клієнтських компонентах використовуються лише `NEXT_PUBLIC_*` змінні;
-- Supabase REST endpoint повертає CORS заголовок для `NEXT_PUBLIC_SITE_URL`.
-
-## Supabase SQL (RLS + таблиці)
-
-Додано міграцію:
-
-- `supabase/migrations/20260323_000001_p0_saved_admin_rls.sql`
-
-Вона створює таблиці `saved_items`, `user_settings`, `user_roles`, `admin_audit_logs` і явні RLS policy для `SELECT / INSERT / UPDATE / DELETE`.
-
-## Робота з GitHub
-
-### Перший раз (нове репо)
-
-```bash
-# 1. Ініціалізувати git (якщо ще не зроблено)
-git init
-
-# 2. Додати всі файли
-git add .
-
-# 3. Зробити перший коміт
-git commit -m "initial commit"
-
-# 4. Підключити GitHub репо (замінити URL на своє)
-git remote add origin https://github.com/USERNAME/REPO_NAME.git
-
-# 5. Запушити
-git push -u origin main
-```
-
-> Репо треба створити на [github.com/new](https://github.com/new) перед кроком 4.
-
----
-
-### Звичайна робота (після змін у коді)
-
-```bash
-# 1. Переглянути що змінилось
-git status
-
-# 2. Додати файли
-git add .
-# або конкретний файл:
-git add src/app/login/page.tsx
-
-# 3. Зробити коміт із описом
-git commit -m "опис що зробив"
-
-# 4. Завантажити на GitHub
-git push
-```
-
----
-
-### Корисні команди
-
-| Команда                 | Що робить                             |
-| ----------------------- | ------------------------------------- |
-| `git status`            | Показує змінені файли                 |
-| `git log --oneline`     | Список останніх комітів               |
-| `git diff`              | Показує конкретні зміни в коді        |
-| `git pull`              | Завантажити зміни з GitHub            |
-| `git checkout -b назва` | Створити нову гілку                   |
-| `git stash`             | Тимчасово зберегти незакомічені зміни |
-
----
-
-## Деплой на Vercel
-
-```bash
-npx vercel
-```
-
-Додай усі змінні з `.env.local` у Vercel Environment Variables.
-
-## Структура
-
-```
-src/
-├── app/
-│   ├── auth/callback/route.ts   # OAuth callback
-│   ├── dashboard/
-│   │   ├── layout.tsx           # Захищений layout
-│   │   ├── page.tsx             # Головна дашборду
-│   │   ├── clouddrop/page.tsx
-│   │   ├── notes/page.tsx
-│   │   └── settings/page.tsx
-│   ├── login/page.tsx           # Сторінка логіну
-│   └── layout.tsx
-├── components/dashboard/
-│   ├── DashboardHeader.tsx      # Хедер з годинником та погодою
-│   ├── WeatherWidget.tsx        # Віджет погоди
-│   └── AppGrid.tsx              # Сітка додатків
-├── lib/supabase/
-│   ├── client.ts                # Браузерний клієнт
-│   └── server.ts                # Серверний клієнт
-└── middleware.ts                # Захист маршрутів
+npm run dev           # Dev server
+npm run build         # Production build
+npm run lint          # ESLint
+npm run format        # Prettier
 ```
