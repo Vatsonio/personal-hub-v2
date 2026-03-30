@@ -21,7 +21,7 @@
     "@supabase/supabase-js": "^2.43.4",
     "bcryptjs": "^3.0.3",
     "lucide-react": "^0.499.0",
-    "next": "^15.5.14",
+    "next": "^16.2.1",
     "next-auth": "^5.0.0-beta.30",
     "postgres": "^3.4.8",
     "react": "^19.2.4",
