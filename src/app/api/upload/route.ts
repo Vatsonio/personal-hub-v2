@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { minioClient, BUCKET, ensureBucket } from "@/lib/minio";
+import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
 
 const MAX_SIZE = 50 * 1024 * 1024; // 50 MB
@@ -39,6 +40,11 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+
+  await sql`
+    UPDATE users SET storage_used_bytes = storage_used_bytes + ${file.size}
+    WHERE id = ${session.user.id}
+  `;
 
   const appUrl = process.env.AUTH_URL?.replace(/\/$/, "") ?? "";
   const publicUrl = `${appUrl}/api/files/${objectName}`;

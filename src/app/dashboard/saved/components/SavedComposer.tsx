@@ -96,7 +96,8 @@ export default function SavedComposer({ onAdd, replyTo, onCancelReply }: Props) 
         source_url: data.url,
         title: file.name,
         tags: [],
-        reply_to: replyTo?.id ?? null
+        reply_to: replyTo?.id ?? null,
+        metadata: { size: data.size, mime: file.type }
       };
       onAdd(input);
       setType("text");
