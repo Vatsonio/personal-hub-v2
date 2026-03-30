@@ -78,9 +78,34 @@ export default function SavedComposer({ onAdd, replyTo, onCancelReply }: Props) 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    // TODO: upload via MinIO API route
-    setUploadError("File upload via MinIO not yet implemented.");
-    setType("text");
+    e.target.value = "";
+
+    setUploading(true);
+    setUploadError(null);
+
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Upload failed");
+
+      const input: CreateSavedItemInput = {
+        content_type: type === "image" ? "image" : "file",
+        content: data.url,
+        source_url: data.url,
+        title: file.name,
+        tags: [],
+        reply_to: replyTo?.id ?? null
+      };
+      onAdd(input);
+      setType("text");
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed");
+      setType("text");
+    } finally {
+      setUploading(false);
+    }
   }
 
   function handleSubmit() {
