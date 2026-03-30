@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Zap } from "lucide-react";
+import Link from "next/link";
 import WeatherWidget from "./WeatherWidget";
 import UserNav from "./UserNav";
 import type { Session } from "next-auth";
@@ -69,7 +70,10 @@ export default function DashboardHeader({
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-gray-950/80 backdrop-blur-xl border-b border-gray-800/60">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2.5">
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
+        >
           <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-blue-500 rounded-lg flex items-center justify-center shadow-md shadow-violet-500/20">
             <Zap className="w-4 h-4 text-white" />
           </div>
@@ -79,7 +83,7 @@ export default function DashboardHeader({
             </span>
             <VersionBadge />
           </div>
-        </div>
+        </Link>
 
         <div className="flex items-center gap-2 sm:gap-4">
           <WeatherWidget />

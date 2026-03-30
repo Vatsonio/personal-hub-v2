@@ -4,7 +4,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
-import { LogOut, Settings, User, BookMarked, ChevronDown } from "lucide-react";
+import { LogOut, Settings, User, BookMarked, ChevronDown, ShieldCheck } from "lucide-react";
 import type { Session } from "next-auth";
 
 type Props = {
@@ -14,6 +14,7 @@ type Props = {
 
 export default function UserNav({ session, savedCount }: Props) {
   const { user } = session;
+  const isAdmin = (user as { role?: string }).role === "admin";
   const displayName = user.name || user.email?.split("@")[0] || "User";
   const initials = displayName
     .split(" ")
@@ -106,6 +107,18 @@ export default function UserNav({ session, savedCount }: Props) {
               Settings
             </Link>
           </DropdownMenu.Item>
+
+          {isAdmin && (
+            <DropdownMenu.Item asChild>
+              <Link
+                href="/dashboard/admin"
+                className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-amber-400 text-sm hover:text-amber-300 hover:bg-amber-400/10 transition-colors outline-none cursor-pointer"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                Admin Panel
+              </Link>
+            </DropdownMenu.Item>
+          )}
 
           <DropdownMenu.Separator className="my-1 h-px bg-gray-800" />
 

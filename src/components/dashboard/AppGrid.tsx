@@ -49,20 +49,17 @@ export default function AppGrid() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Додатки</h2>
-        <button
-          onClick={() => setEditing((e) => !e)}
-          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors"
-        >
-          {editing ? (
-            <>
-              <Check className="w-3.5 h-3.5" /> Готово
-            </>
-          ) : (
-            <>
-              <Pencil className="w-3.5 h-3.5" /> Редагувати
-            </>
+        <div className="flex items-center gap-2">
+          {!editing && hidden.size > 0 && (
+            <span className="text-xs text-gray-600">({hidden.size} hidden)</span>
           )}
-        </button>
+          <button
+            onClick={() => setEditing((e) => !e)}
+            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+          >
+            {editing ? <Check className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
