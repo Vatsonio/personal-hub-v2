@@ -40,8 +40,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const base = process.env.MINIO_PUBLIC_URL?.replace(/\/$/, "") ?? "";
-  const publicUrl = `${base}/${objectName}`;
+  const appUrl = process.env.AUTH_URL?.replace(/\/$/, "") ?? "";
+  const publicUrl = `${appUrl}/api/files/${objectName}`;
 
   return NextResponse.json({ url: publicUrl, name: file.name, size: file.size });
 }

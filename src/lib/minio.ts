@@ -18,20 +18,5 @@ export async function ensureBucket() {
   const exists = await minioClient.bucketExists(BUCKET);
   if (!exists) {
     await minioClient.makeBucket(BUCKET);
-    // public read policy
-    await minioClient.setBucketPolicy(
-      BUCKET,
-      JSON.stringify({
-        Version: "2012-10-17",
-        Statement: [
-          {
-            Effect: "Allow",
-            Principal: { AWS: ["*"] },
-            Action: ["s3:GetObject"],
-            Resource: [`arn:aws:s3:::${BUCKET}/*`]
-          }
-        ]
-      })
-    );
   }
 }

@@ -10,9 +10,21 @@ export default auth((req) => {
     if (
       pathname.startsWith("/dashboard") ||
       pathname.startsWith("/api/saved") ||
-      pathname.startsWith("/api/user")
+      pathname.startsWith("/api/user") ||
+      pathname.startsWith("/api/upload") ||
+      pathname.startsWith("/api/files")
     ) {
-      return NextResponse.redirect(new URL("/login", req.url));
+      return pathname.startsWith("/api/")
+        ? NextResponse.json({ error: "Forbidden" }, { status: 403 })
+        : NextResponse.redirect(new URL("/login", req.url));
+    }
+  }
+
+  // Admin API — захист на рівні middleware
+  if (pathname.startsWith("/api/admin")) {
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (session.user.role !== "admin" || session.user.status !== "active") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
   }
 
@@ -31,5 +43,13 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/login", "/api/saved/:path*", "/api/user/:path*"]
+  matcher: [
+    "/dashboard/:path*",
+    "/login",
+    "/api/saved/:path*",
+    "/api/user/:path*",
+    "/api/upload",
+    "/api/files/:path*",
+    "/api/admin/:path*"
+  ]
 };
