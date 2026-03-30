@@ -2,7 +2,7 @@ name: Build & Push Docker Image
 
 on:
   push:
-    branches: [self-hosted]
+    branches: [main]
   workflow_dispatch: # дозволяє запустити вручну з GitHub UI
 
 env:
