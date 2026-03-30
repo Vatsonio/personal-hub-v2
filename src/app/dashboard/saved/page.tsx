@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { sql } from "@/lib/db";
+import { minioClient, BUCKET } from "@/lib/minio";
 import SavedClient from "./SavedClient";
 import type { SavedItem } from "@/types/domain";
 
@@ -24,11 +25,22 @@ export default async function SavedPage() {
         ORDER BY is_pinned DESC, created_at DESC
         LIMIT 100
       `,
-      sql`SELECT storage_used_bytes, storage_limit_bytes FROM users WHERE id = ${session.user.id} LIMIT 1`
+      sql`SELECT storage_limit_bytes FROM users WHERE id = ${session.user.id} LIMIT 1`
     ]);
     items = rows as unknown as SavedItem[];
-    storageUsed = Number(storageRows[0]?.storage_used_bytes ?? 0);
     storageLimit = Number(storageRows[0]?.storage_limit_bytes ?? 0);
+
+    // Calculate real storage used from MinIO
+    let total = 0;
+    const stream = minioClient.listObjects(BUCKET, `${session.user.id}/`, true);
+    await new Promise<void>((resolve, reject) => {
+      stream.on("data", (obj) => {
+        total += obj.size ?? 0;
+      });
+      stream.on("end", resolve);
+      stream.on("error", reject);
+    });
+    storageUsed = total;
   } catch (e) {
     dbError = e instanceof Error ? e.message : "DB error";
     console.error("[SavedPage] DB error:", dbError);
