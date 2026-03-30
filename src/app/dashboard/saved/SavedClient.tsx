@@ -10,9 +10,29 @@ import { useSavedItems } from "./hooks/useSavedItems";
 import { useSavedSearch } from "./hooks/useSavedSearch";
 import type { SavedItem } from "@/types/domain";
 
-type Props = { initialItems: SavedItem[]; userId: string; dbError?: string | null };
+type Props = {
+  initialItems: SavedItem[];
+  userId: string;
+  dbError?: string | null;
+  storageUsed?: number;
+  storageLimit?: number;
+};
 
-export default function SavedClient({ initialItems, userId: initialUserId, dbError }: Props) {
+function fmtBytes(n: number) {
+  if (!n || n <= 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(n) / Math.log(k));
+  return `${(n / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+}
+
+export default function SavedClient({
+  initialItems,
+  userId: initialUserId,
+  dbError,
+  storageUsed = 0,
+  storageLimit = 0
+}: Props) {
   const [userId] = useState(initialUserId);
 
   // "Connecting…" shimmer — show briefly on cold cloud start so users see
@@ -73,10 +93,25 @@ export default function SavedClient({ initialItems, userId: initialUserId, dbErr
         <div className="w-9 h-9 bg-gradient-to-br from-violet-500 to-blue-500 rounded-xl flex items-center justify-center shadow-md shadow-violet-500/20">
           <BookMarked className="w-5 h-5 text-white" />
         </div>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <h1 className="text-white font-semibold text-lg leading-none">Saved</h1>
           <p className="text-gray-500 text-xs mt-0.5">{items.length} елементів</p>
         </div>
+        {storageLimit > 0 && (
+          <div className="flex flex-col items-end gap-1 flex-shrink-0">
+            <span className="text-xs text-gray-500">
+              {fmtBytes(storageUsed)} / {fmtBytes(storageLimit)}
+            </span>
+            <div className="w-20 h-1 bg-gray-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-violet-500 rounded-full transition-all"
+                style={{
+                  width: `${Math.min(100, Math.round((storageUsed / storageLimit) * 100))}%`
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       <SavedSearchBar value={rawSearch} onChange={setRawSearch} loading={ftsLoading} />

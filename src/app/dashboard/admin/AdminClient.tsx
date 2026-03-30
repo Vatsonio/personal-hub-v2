@@ -61,12 +61,13 @@ type StatusFilter = "all" | "pending" | "active" | "banned";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function fmtBytes(bytes: number) {
-  if (bytes === 0) return "0 B";
+function fmtBytes(bytes: number | string | bigint) {
+  const n = Number(bytes);
+  if (!n || n <= 0) return "0 B";
   const k = 1024;
   const sizes = ["B", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+  const i = Math.floor(Math.log(n) / Math.log(k));
+  return `${(n / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
 }
 
 function fmtDate(d: string | null) {
@@ -443,16 +444,17 @@ function UserRow({
 }) {
   const [open, setOpen] = useState(false);
   const storagePercent =
-    user.storage_limit_bytes > 0
-      ? Math.round((user.storage_used_bytes / user.storage_limit_bytes) * 100)
+    Number(user.storage_limit_bytes) > 0
+      ? Math.round((Number(user.storage_used_bytes) / Number(user.storage_limit_bytes)) * 100)
       : 0;
 
-  function fmtBytes(bytes: number) {
-    if (bytes === 0) return "0 B";
+  function fmtBytes(bytes: number | string | bigint) {
+    const n = Number(bytes);
+    if (!n || n <= 0) return "0 B";
     const k = 1024,
       sizes = ["B", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+    const i = Math.floor(Math.log(n) / Math.log(k));
+    return `${(n / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
   }
 
   return (
