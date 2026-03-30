@@ -25,12 +25,20 @@ export async function POST(req: NextRequest) {
   const ext = file.name.includes(".") ? file.name.split(".").pop()!.toLowerCase() : "bin";
   const objectName = `${session.user.id}/${randomUUID()}.${ext}`;
 
-  await ensureBucket();
+  try {
+    await ensureBucket();
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  await minioClient.putObject(BUCKET, objectName, buffer, buffer.length, {
-    "Content-Type": file.type || "application/octet-stream"
-  });
+    const buffer = Buffer.from(await file.arrayBuffer());
+    await minioClient.putObject(BUCKET, objectName, buffer, buffer.length, {
+      "Content-Type": file.type || "application/octet-stream"
+    });
+  } catch (err) {
+    console.error("[upload] MinIO error:", err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Storage error" },
+      { status: 500 }
+    );
+  }
 
   const publicUrl = `${process.env.MINIO_PUBLIC_URL ?? ""}/${BUCKET}/${objectName}`;
 
