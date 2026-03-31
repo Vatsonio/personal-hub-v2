@@ -171,7 +171,8 @@ export default function ImageLightbox({ images, initialIndex, onClose }: Props) 
           style={{
             transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
             transition: dragging ? "none" : "transform 0.15s ease",
-            maxHeight: "calc(100vh - 8rem)",
+            maxHeight:
+              "calc(100dvh - 8rem - env(safe-area-inset-top) - env(safe-area-inset-bottom))",
             maxWidth: "100%",
             objectFit: "contain"
           }}
@@ -198,7 +199,10 @@ export default function ImageLightbox({ images, initialIndex, onClose }: Props) 
 
       {/* Thumbnail strip (if > 1 image) */}
       {images.length > 1 && (
-        <div className="flex-shrink-0 flex gap-1.5 justify-center px-4 py-2 overflow-x-auto">
+        <div
+          className="flex-shrink-0 flex gap-1.5 justify-center px-4 py-2 overflow-x-auto"
+          style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
+        >
           {images.map((img, i) => (
             <button
               key={i}

@@ -105,8 +105,11 @@ export default function SavedClient({
 
   return (
     <div
-      className="flex flex-col"
-      style={{ height: "calc(100dvh - 5rem - env(safe-area-inset-bottom))" }}
+      className="flex flex-col -mb-6 sm:mb-0"
+      style={{
+        height:
+          "calc(100dvh - 4rem - env(safe-area-inset-top) - 3.5rem - env(safe-area-inset-bottom))"
+      }}
     >
       {/* Header — hidden on mobile (bottom nav handles navigation) */}
       <div className="hidden sm:flex items-center gap-3 mb-3 flex-shrink-0">
