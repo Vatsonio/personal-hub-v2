@@ -107,3 +107,7 @@ CREATE INDEX IF NOT EXISTS idx_admin_logs_admin_id   ON admin_logs(admin_id);
 CREATE INDEX IF NOT EXISTS idx_admin_logs_created_at ON admin_logs(created_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_rate_limits_window ON rate_limits(window_start);
+
+-- ─── Idempotent column additions (safe to re-run) ─────────────────────────────
+ALTER TABLE users ADD COLUMN IF NOT EXISTS dismissed_announcement_ids UUID[] DEFAULT '{}';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS settings JSONB DEFAULT '{}';

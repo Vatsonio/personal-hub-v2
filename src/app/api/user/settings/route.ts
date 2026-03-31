@@ -6,25 +6,18 @@ export async function GET() {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const rows = await sql`
-    SELECT name, avatar_url, settings, dismissed_announcement_ids
-    FROM users WHERE id = ${session.user.id} LIMIT 1
-  `;
-  return NextResponse.json(rows[0] ?? {});
+  const rows = await sql`SELECT settings FROM users WHERE id = ${session.user.id} LIMIT 1`;
+  return NextResponse.json(rows[0]?.settings ?? {});
 }
 
 export async function PUT(req: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { name, avatar_url, timezone } = await req.json();
+  const body = await req.json();
 
   await sql`
-    UPDATE users SET
-      name       = ${name ?? null},
-      avatar_url = ${avatar_url ?? null},
-      timezone   = ${timezone ?? "UTC"},
-      updated_at = now()
+    UPDATE users SET settings = ${sql.json(body)}, updated_at = now()
     WHERE id = ${session.user.id}
   `;
   return NextResponse.json({ ok: true });

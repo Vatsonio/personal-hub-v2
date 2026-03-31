@@ -37,7 +37,7 @@ const nextConfig = {
     return [
       {
         source: "/files/:path*",
-        destination: `http://minio:9000/${process.env.MINIO_BUCKET ?? "personal-hub"}/:path*`
+        destination: "/api/files/:path*"
       }
     ];
   },

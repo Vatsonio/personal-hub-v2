@@ -15,18 +15,22 @@ export function Announcements() {
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("dismissed_announcements") ?? "[]") as string[];
-    setDismissed(new Set(stored));
-
-    fetch("/api/announcements")
-      .then((r) => r.json())
-      .then((d) => setItems(d.announcements ?? []));
+    Promise.all([
+      fetch("/api/announcements").then((r) => r.json()),
+      fetch("/api/user/dismiss-announcement").then((r) => r.json())
+    ]).then(([annData, dismissData]) => {
+      setItems(annData.announcements ?? []);
+      setDismissed(new Set((dismissData.ids ?? []) as string[]));
+    });
   }, []);
 
-  function dismiss(id: string) {
-    const next = new Set(dismissed).add(id);
-    setDismissed(next);
-    localStorage.setItem("dismissed_announcements", JSON.stringify([...next]));
+  async function dismiss(id: string) {
+    setDismissed((prev) => new Set(prev).add(id));
+    await fetch("/api/user/dismiss-announcement", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id })
+    });
   }
 
   const visible = items.filter((a) => !dismissed.has(a.id));

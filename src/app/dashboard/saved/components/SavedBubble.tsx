@@ -193,14 +193,30 @@ export default function SavedBubble({
 
           {item.content_type === "image" && item.source_url && (
             <div className="mt-1">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={item.source_url}
-                alt={item.title ?? "image"}
-                className="max-h-64 rounded-xl object-cover border border-gray-800"
-              />
+              <a href={item.source_url} target="_blank" rel="noopener noreferrer" className="block">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={item.source_url}
+                  alt={item.title ?? "image"}
+                  className="max-h-72 max-w-full rounded-xl object-contain border border-gray-800/60 bg-gray-900/40 hover:opacity-90 transition-opacity cursor-zoom-in"
+                  loading="lazy"
+                />
+              </a>
             </div>
           )}
+
+          {item.content_type === "file" &&
+            item.source_url &&
+            /\.(mp4|webm|ogg|mov)$/i.test(item.source_url) && (
+              <div className="mt-1">
+                <video
+                  src={item.source_url}
+                  controls
+                  className="max-h-64 max-w-full rounded-xl border border-gray-800/60 bg-black"
+                  preload="metadata"
+                />
+              </div>
+            )}
 
           {item.content_type === "file" && item.source_url && (
             <a

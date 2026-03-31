@@ -9,7 +9,8 @@ import {
   type TimeFormat,
   type WeatherMode,
   readSettings,
-  saveSettings
+  saveSettings,
+  syncSettingsFromDb
 } from "@/lib/settings";
 
 export default function SettingsPage() {
@@ -21,12 +22,23 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    const settings = readSettings();
-    setTheme(settings.theme);
-    setLocale(settings.locale);
-    setWeatherMode(settings.weatherMode);
-    setWeatherCity(settings.weatherCity);
-    setTimeFormat(settings.timeFormat);
+    // Load from localStorage first (instant), then sync from DB (may override)
+    const local = readSettings();
+    setTheme(local.theme);
+    setLocale(local.locale);
+    setWeatherMode(local.weatherMode);
+    setWeatherCity(local.weatherCity);
+    setTimeFormat(local.timeFormat);
+
+    syncSettingsFromDb().then((db) => {
+      if (db) {
+        setTheme(db.theme);
+        setLocale(db.locale);
+        setWeatherMode(db.weatherMode);
+        setWeatherCity(db.weatherCity);
+        setTimeFormat(db.timeFormat);
+      }
+    });
   }, []);
 
   function handleSave() {

@@ -65,4 +65,32 @@ export function saveSettings(nextSettings: AppSettings) {
   window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(nextSettings));
   applyTheme(nextSettings.theme);
   window.dispatchEvent(new CustomEvent(SETTINGS_EVENT_NAME, { detail: nextSettings }));
+
+  // Sync to DB in background (non-blocking)
+  fetch("/api/user/settings", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(nextSettings)
+  }).catch(() => {});
+}
+
+export async function syncSettingsFromDb(): Promise<AppSettings | null> {
+  try {
+    const res = await fetch("/api/user/settings");
+    if (!res.ok) return null;
+    const data = (await res.json()) as Partial<AppSettings>;
+    if (!data || Object.keys(data).length === 0) return null;
+    const settings: AppSettings = {
+      theme: data.theme === "amoled" ? "amoled" : DEFAULT_SETTINGS.theme,
+      locale: data.locale === "en-US" ? "en-US" : DEFAULT_SETTINGS.locale,
+      weatherCity: data.weatherCity?.trim() ?? "",
+      weatherMode: data.weatherMode === "manual" ? "manual" : "auto",
+      timeFormat: data.timeFormat === "12h" ? "12h" : DEFAULT_SETTINGS.timeFormat
+    };
+    window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    applyTheme(settings.theme);
+    return settings;
+  } catch {
+    return null;
+  }
 }
