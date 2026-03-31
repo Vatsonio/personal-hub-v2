@@ -41,6 +41,20 @@ body {
   background: #475569;
 }
 
+/* ─── Dashboard layout ────────────────────────────────────────── */
+
+/* Mobile: push content above bottom nav + safe area */
+.dashboard-main {
+  padding-bottom: calc(3.5rem + env(safe-area-inset-bottom) + 0.5rem);
+}
+
+/* Desktop: no bottom nav, just breathing room */
+@media (min-width: 640px) {
+  .dashboard-main {
+    padding-bottom: 2rem;
+  }
+}
+
 /* ─── Glass Theme ─────────────────────────────────────────────── */
 
 body.theme-glass {

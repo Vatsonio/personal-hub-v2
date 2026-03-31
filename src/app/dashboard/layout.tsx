@@ -21,11 +21,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="min-h-screen bg-gray-950">
       <DashboardHeader session={session} savedCount={savedCount} />
       <main
-        className="px-4 max-w-6xl mx-auto"
-        style={{
-          paddingTop: "calc(4rem + env(safe-area-inset-top))",
-          paddingBottom: "calc(3.5rem + env(safe-area-inset-bottom) + 1.5rem)"
-        }}
+        className="dashboard-main px-4 max-w-6xl mx-auto"
+        style={{ paddingTop: "calc(4rem + env(safe-area-inset-top))" }}
       >
         {children}
       </main>
