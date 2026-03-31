@@ -30,10 +30,25 @@ export default function SavedClient({
   initialItems,
   userId: initialUserId,
   dbError,
-  storageUsed = 0,
-  storageLimit = 0
+  storageUsed: initialStorageUsed = 0,
+  storageLimit: initialStorageLimit = 0
 }: Props) {
   const [userId] = useState(initialUserId);
+  const [storageUsed, setStorageUsed] = useState(initialStorageUsed);
+  const [storageLimit, setStorageLimit] = useState(initialStorageLimit);
+
+  const refreshStorage = useCallback(async () => {
+    try {
+      const res = await fetch("/api/user/storage");
+      if (res.ok) {
+        const data = await res.json();
+        setStorageUsed(data.used);
+        setStorageLimit(data.limit);
+      }
+    } catch {
+      // silent
+    }
+  }, []);
 
   // "Connecting…" shimmer — show briefly on cold cloud start so users see
   // something is happening rather than a blank screen.
@@ -199,7 +214,10 @@ export default function SavedClient({
           onUnpin={(id) => updateItem(id, { is_pinned: false })}
           onFavorite={(id) => updateItem(id, { is_favorite: true })}
           onUnfavorite={(id) => updateItem(id, { is_favorite: false })}
-          onDelete={deleteItem}
+          onDelete={async (id) => {
+            await deleteItem(id);
+            refreshStorage();
+          }}
           onReply={setReplyTo}
           onUpdateMeta={(id, meta) =>
             updateItem(id, {
@@ -212,7 +230,12 @@ export default function SavedClient({
 
       {/* Composer — hidden during bulk selection */}
       {!hasSelection && (
-        <SavedComposer onAdd={addItem} replyTo={replyTo} onCancelReply={() => setReplyTo(null)} />
+        <SavedComposer
+          onAdd={addItem}
+          onUploadDone={refreshStorage}
+          replyTo={replyTo}
+          onCancelReply={() => setReplyTo(null)}
+        />
       )}
     </div>
   );

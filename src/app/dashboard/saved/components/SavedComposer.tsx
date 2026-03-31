@@ -6,6 +6,7 @@ import type { SavedItem, SavedContentType, CreateSavedItemInput } from "@/types/
 
 type Props = {
   onAdd: (input: CreateSavedItemInput) => void;
+  onUploadDone?: () => void;
   replyTo: SavedItem | null;
   onCancelReply: () => void;
 };
@@ -37,10 +38,11 @@ function fileExt(name: string) {
   return name.includes(".") ? name.split(".").pop()!.toLowerCase() : "bin";
 }
 
-export default function SavedComposer({ onAdd, replyTo, onCancelReply }: Props) {
+export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelReply }: Props) {
   const [text, setText] = useState("");
   const [type, setType] = useState<SavedContentType>("text");
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Auto-dismiss upload errors after 4 seconds
@@ -81,14 +83,33 @@ export default function SavedComposer({ onAdd, replyTo, onCancelReply }: Props) 
     e.target.value = "";
 
     setUploading(true);
+    setUploadProgress(0);
     setUploadError(null);
 
     try {
       const form = new FormData();
       form.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: form });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Upload failed");
+
+      const data = await new Promise<{ url: string; name: string; size: number; error?: string }>(
+        (resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("POST", "/api/upload");
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
+          };
+          xhr.onload = () => {
+            try {
+              resolve(JSON.parse(xhr.responseText));
+            } catch {
+              reject(new Error("Invalid response"));
+            }
+          };
+          xhr.onerror = () => reject(new Error("Network error"));
+          xhr.send(form);
+        }
+      );
+
+      if (data.error) throw new Error(data.error);
 
       const input: CreateSavedItemInput = {
         content_type: type === "image" ? "image" : "file",
@@ -100,12 +121,14 @@ export default function SavedComposer({ onAdd, replyTo, onCancelReply }: Props) 
         metadata: { size: data.size, mime: file.type }
       };
       onAdd(input);
+      onUploadDone?.();
       setType("text");
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Upload failed");
       setType("text");
     } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   }
 
@@ -160,6 +183,24 @@ export default function SavedComposer({ onAdd, replyTo, onCancelReply }: Props) 
           <button onClick={onCancelReply} className="hover:text-white">
             <X className="w-3.5 h-3.5" />
           </button>
+        </div>
+      )}
+
+      {/* Upload progress bar */}
+      {uploading && (
+        <div className="mb-2 px-3 py-2 bg-gray-800/60 border border-gray-700/50 rounded-xl">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs text-gray-400 flex items-center gap-1.5">
+              <Loader2 className="w-3 h-3 animate-spin" /> Завантаження…
+            </span>
+            <span className="text-xs text-gray-500">{uploadProgress}%</span>
+          </div>
+          <div className="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-violet-500 rounded-full transition-all duration-150"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
         </div>
       )}
 

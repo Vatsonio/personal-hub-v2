@@ -48,6 +48,7 @@ export const config = {
     "/login",
     "/api/saved/:path*",
     "/api/user/:path*",
+    "/api/user/storage",
     "/api/upload",
     "/api/files/:path*",
     "/api/admin/:path*"
