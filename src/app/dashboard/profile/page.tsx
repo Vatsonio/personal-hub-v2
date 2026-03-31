@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { ArrowLeft, KeyRound, LogOut, Save, ShieldCheck, UserCircle2 } from "lucide-react";
 import { signOut } from "next-auth/react";
@@ -11,6 +11,16 @@ export default function ProfilePage() {
 
   const [name, setName] = useState(session?.user.name ?? "");
   const [avatarUrl, setAvatarUrl] = useState(session?.user.image ?? "");
+
+  useEffect(() => {
+    fetch("/api/user/profile")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.name !== undefined) setName(d.name ?? "");
+        if (d.avatar_url !== undefined) setAvatarUrl(d.avatar_url ?? "");
+      })
+      .catch(() => {});
+  }, []);
   const [timezone, setTimezone] = useState(
     typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC"
   );

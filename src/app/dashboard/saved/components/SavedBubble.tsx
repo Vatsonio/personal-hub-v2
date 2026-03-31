@@ -17,7 +17,7 @@ import {
   ChevronDown,
   ChevronUp,
   Check,
-  Download,
+  FileText,
   FileDown,
   Bell,
   BellOff
@@ -39,6 +39,7 @@ type Props = {
   onReply: () => void;
   onUpdateMeta?: (meta: Record<string, string>) => void;
   onSetReminder: (iso: string | null) => void;
+  onOpenImage?: () => void;
 };
 
 const TYPE_ICON: Record<string, React.ElementType> = {
@@ -65,7 +66,8 @@ export default function SavedBubble({
   onDelete,
   onReply,
   onUpdateMeta,
-  onSetReminder
+  onSetReminder,
+  onOpenImage
 }: Props) {
   const [showMd, setShowMd] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -193,15 +195,19 @@ export default function SavedBubble({
 
           {item.content_type === "image" && item.source_url && (
             <div className="mt-1">
-              <a href={item.source_url} target="_blank" rel="noopener noreferrer" className="block">
+              <button
+                onClick={onOpenImage}
+                className="block text-left focus:outline-none"
+                title="Відкрити"
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={item.source_url}
                   alt={item.title ?? "image"}
-                  className="max-h-72 max-w-full rounded-xl object-contain border border-gray-800/60 bg-gray-900/40 hover:opacity-90 transition-opacity cursor-zoom-in"
+                  className="max-h-64 max-w-full rounded-xl object-contain border border-gray-800/60 bg-gray-900/40 hover:opacity-90 transition-opacity cursor-zoom-in"
                   loading="lazy"
                 />
-              </a>
+              </button>
             </div>
           )}
 
@@ -279,7 +285,7 @@ export default function SavedBubble({
           )}
         </ActionBtn>
         <ActionBtn onClick={handleExportMd} title="Експорт .md">
-          <Download className="w-3.5 h-3.5" />
+          <FileText className="w-3.5 h-3.5" />
         </ActionBtn>
         <ActionBtn onClick={handleExportJson} title="Експорт .json">
           <FileDown className="w-3.5 h-3.5" />

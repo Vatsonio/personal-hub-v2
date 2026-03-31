@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import SettingsHydrator from "@/components/settings/SettingsHydrator";
 import { SessionProvider } from "next-auth/react";
+import { LocaleProvider } from "@/components/LocaleProvider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-geist-sans" });
 
@@ -22,8 +23,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="uk" className="dark">
       <body className={`${inter.variable} font-sans antialiased bg-gray-950 text-white`}>
         <SessionProvider>
-          <SettingsHydrator />
-          {children}
+          <LocaleProvider>
+            <SettingsHydrator />
+            {children}
+          </LocaleProvider>
         </SessionProvider>
       </body>
     </html>

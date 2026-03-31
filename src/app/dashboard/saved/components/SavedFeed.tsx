@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import SavedBubble from "./SavedBubble";
+import ImageLightbox from "./ImageLightbox";
+import { useLocale } from "@/components/LocaleProvider";
 import type { SavedItem } from "@/types/domain";
 
 type Props = {
@@ -18,21 +20,6 @@ type Props = {
   onUpdateMeta: (id: string, meta: Record<string, string>) => void;
   onSetReminder: (id: string, iso: string | null) => void;
 };
-
-function formatDateSeparator(isoString: string): string {
-  const date = new Date(isoString);
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-
-  const isToday = date.toDateString() === today.toDateString();
-  const isYesterday = date.toDateString() === yesterday.toDateString();
-
-  if (isToday) return "Сьогодні";
-  if (isYesterday) return "Вчора";
-
-  return date.toLocaleDateString("uk-UA", { day: "numeric", month: "long", year: "numeric" });
-}
 
 export default function SavedFeed({
   items,
@@ -51,6 +38,17 @@ export default function SavedFeed({
   const bottomRef = useRef<HTMLDivElement>(null);
   const dateRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const prevCountRef = useRef(items.length);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const { formatDate, t } = useLocale();
+
+  const imageItems = items
+    .filter((i) => i.content_type === "image" && i.source_url)
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+  function openLightbox(item: SavedItem) {
+    const idx = imageItems.findIndex((i) => i.id === item.id);
+    if (idx !== -1) setLightboxIndex(idx);
+  }
 
   useEffect(() => {
     if (items.length > prevCountRef.current) {
@@ -63,8 +61,8 @@ export default function SavedFeed({
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-600 select-none">
         <span className="text-4xl mb-3">📌</span>
-        <p className="text-sm">Ще нічого не збережено</p>
-        <p className="text-xs mt-1">Введи текст або посилання нижче</p>
+        <p className="text-sm">{t("feed.empty")}</p>
+        <p className="text-xs mt-1">{t("feed.empty_sub")}</p>
       </div>
     );
   }
@@ -90,7 +88,7 @@ export default function SavedFeed({
         >
           <div className="flex-1 h-px bg-gray-800" />
           <span className="text-xs text-gray-600 font-medium px-2 py-0.5 bg-gray-900 rounded-full border border-gray-800">
-            {formatDateSeparator(item.created_at)}
+            {formatDate(item.created_at)}
           </span>
           <div className="flex-1 h-px bg-gray-800" />
         </div>
@@ -116,26 +114,36 @@ export default function SavedFeed({
         onReply={() => onReply(item)}
         onUpdateMeta={(meta) => onUpdateMeta(item.id, meta)}
         onSetReminder={(iso) => onSetReminder(item.id, iso)}
+        onOpenImage={() => openLightbox(item)}
       />
     );
   }
 
   return (
-    <div className="flex flex-col px-2 pb-4">
-      <div className="flex items-center gap-2 mb-2 px-2">
-        <input
-          type="date"
-          className="bg-gray-900 border border-gray-800 rounded-lg px-2 py-1 text-xs text-gray-400 focus:outline-none focus:border-violet-500/60"
-          onChange={(e) => {
-            const val = e.target.value;
-            const target = dateRefs.current.get(new Date(val + "T00:00:00").toDateString());
-            target?.scrollIntoView({ behavior: "smooth", block: "start" });
-          }}
+    <>
+      {lightboxIndex !== null && (
+        <ImageLightbox
+          images={imageItems.map((i) => ({ src: i.source_url!, title: i.title }))}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
         />
-        <span className="text-xs text-gray-600">jump to date</span>
+      )}
+      <div className="flex flex-col px-2 pb-4">
+        <div className="flex items-center gap-2 mb-2 px-2">
+          <input
+            type="date"
+            className="bg-gray-900 border border-gray-800 rounded-lg px-2 py-1 text-xs text-gray-400 focus:outline-none focus:border-violet-500/60"
+            onChange={(e) => {
+              const val = e.target.value;
+              const target = dateRefs.current.get(new Date(val + "T00:00:00").toDateString());
+              target?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+          />
+          <span className="text-xs text-gray-600">{t("feed.jump_to_date")}</span>
+        </div>
+        {rendered}
+        <div ref={bottomRef} />
       </div>
-      {rendered}
-      <div ref={bottomRef} />
-    </div>
+    </>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { BookMarked, Trash2, Tag, X, Check, AlertTriangle, Loader2 } from "lucide-react";
+import { useLocale } from "@/components/LocaleProvider";
 import SavedFeed from "./components/SavedFeed";
 import SavedComposer from "./components/SavedComposer";
 import SavedFilters from "./components/SavedFilters";
@@ -34,6 +35,7 @@ export default function SavedClient({
   storageLimit: initialStorageLimit = 0
 }: Props) {
   const [userId] = useState(initialUserId);
+  const { t } = useLocale();
   const [storageUsed, setStorageUsed] = useState(initialStorageUsed);
   const [storageLimit, setStorageLimit] = useState(initialStorageLimit);
 
@@ -109,8 +111,8 @@ export default function SavedClient({
           <BookMarked className="w-5 h-5 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <h1 className="text-white font-semibold text-lg leading-none">Saved</h1>
-          <p className="text-gray-500 text-xs mt-0.5">{items.length} елементів</p>
+          <h1 className="text-white font-semibold text-lg leading-none">{t("saved.title")}</h1>
+          <p className="text-gray-500 text-xs mt-0.5">{t("saved.count", items.length)}</p>
         </div>
         {storageLimit > 0 && (
           <div className="flex flex-col items-end gap-1 flex-shrink-0">
