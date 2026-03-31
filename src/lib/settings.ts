@@ -1,4 +1,4 @@
-export type AppTheme = "dark" | "amoled";
+export type AppTheme = "dark" | "amoled" | "glass";
 export type AppLocale = "uk-UA" | "en-US";
 export type TimeFormat = "24h" | "12h";
 
@@ -23,6 +23,12 @@ export const DEFAULT_SETTINGS: AppSettings = {
   timeFormat: "24h"
 };
 
+function parseTheme(t: unknown): AppTheme {
+  if (t === "amoled") return "amoled";
+  if (t === "glass") return "glass";
+  return "dark";
+}
+
 export function readSettings(): AppSettings {
   if (typeof window === "undefined") return DEFAULT_SETTINGS;
 
@@ -32,7 +38,7 @@ export function readSettings(): AppSettings {
 
     const parsed = JSON.parse(raw) as Partial<AppSettings>;
     return {
-      theme: parsed.theme === "amoled" ? "amoled" : DEFAULT_SETTINGS.theme,
+      theme: parseTheme(parsed.theme),
       locale: parsed.locale === "en-US" ? "en-US" : DEFAULT_SETTINGS.locale,
       weatherCity: parsed.weatherCity?.trim() ?? "",
       weatherMode: parsed.weatherMode === "manual" ? "manual" : "auto",
@@ -50,10 +56,12 @@ export function applyTheme(theme: AppTheme) {
   const body = document.body;
 
   html.classList.add("dark");
-  body.classList.remove("bg-black", "bg-gray-950", "text-white");
+  body.classList.remove("bg-black", "bg-gray-950", "text-white", "theme-glass");
 
   if (theme === "amoled") {
     body.classList.add("bg-black", "text-white");
+  } else if (theme === "glass") {
+    body.classList.add("theme-glass", "text-white");
   } else {
     body.classList.add("bg-gray-950", "text-white");
   }
@@ -81,7 +89,7 @@ export async function syncSettingsFromDb(): Promise<AppSettings | null> {
     const data = (await res.json()) as Partial<AppSettings>;
     if (!data || Object.keys(data).length === 0) return null;
     const settings: AppSettings = {
-      theme: data.theme === "amoled" ? "amoled" : DEFAULT_SETTINGS.theme,
+      theme: parseTheme(data.theme),
       locale: data.locale === "en-US" ? "en-US" : DEFAULT_SETTINGS.locale,
       weatherCity: data.weatherCity?.trim() ?? "",
       weatherMode: data.weatherMode === "manual" ? "manual" : "auto",

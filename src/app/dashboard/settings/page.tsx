@@ -80,6 +80,7 @@ export default function SettingsPage() {
             >
               <option value="dark">Dark</option>
               <option value="amoled">AMOLED</option>
+              <option value="glass">Glass ✦</option>
             </select>
           </label>
 
