@@ -171,7 +171,7 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
   const isUploadMode = UPLOAD_TYPES.includes(type);
 
   return (
-    <div className="flex-shrink-0 mt-2 border-t border-gray-800/60 pt-3">
+    <div className="flex-shrink-0 mt-1 border-t border-gray-800/60 pt-2 sm:pt-3 pb-[calc(env(safe-area-inset-bottom)+0.25rem)]">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -223,7 +223,7 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
       )}
 
       {/* Type selector */}
-      <div className="flex gap-1 mb-2">
+      <div className="flex gap-1.5 mb-2">
         {TYPES.map(({ value, Icon, label }) => (
           <button
             key={value}
@@ -271,7 +271,7 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
                 : "Збережи текст, ідею або нотатку… (#теги підтримуються)"
             }
             rows={1}
-            className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 resize-none focus:outline-none leading-relaxed min-h-[2rem] max-h-40"
+            className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 resize-none focus:outline-none leading-relaxed min-h-[2.5rem] max-h-40"
           />
           <button
             onClick={handleSubmit}

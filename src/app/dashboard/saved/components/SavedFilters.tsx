@@ -43,61 +43,65 @@ export default function SavedFilters({ filters, onChange, items }: Props) {
   return (
     <div className="flex flex-col gap-1.5 flex-shrink-0 mb-1">
       {/* Типи */}
-      <div className="flex gap-1.5 flex-wrap">
-        {TYPE_OPTIONS.map(({ value, label, Icon }) => (
+      <div className="overflow-x-auto -mx-1 px-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex gap-1.5 min-w-max">
+          {TYPE_OPTIONS.map(({ value, label, Icon }) => (
+            <button
+              key={value}
+              onClick={() => toggle("type", value)}
+              className={`flex items-center gap-1 px-2 py-1 sm:px-2.5 rounded-lg text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap ${
+                filters.type === value
+                  ? "bg-violet-500/20 text-violet-300 border border-violet-500/40"
+                  : "bg-gray-900/50 text-gray-500 border border-gray-800 hover:text-gray-300 hover:border-gray-700"
+              }`}
+            >
+              <Icon className="w-3 h-3" />
+              {label}
+            </button>
+          ))}
+
           <button
-            key={value}
-            onClick={() => toggle("type", value)}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-              filters.type === value
-                ? "bg-violet-500/20 text-violet-300 border border-violet-500/40"
-                : "bg-gray-900/50 text-gray-500 border border-gray-800 hover:text-gray-300 hover:border-gray-700"
+            onClick={() => toggle("pinned", !filters.pinned)}
+            className={`flex items-center gap-1 px-2 py-1 sm:px-2.5 rounded-lg text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap ${
+              filters.pinned
+                ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                : "bg-gray-900/50 text-gray-500 border border-gray-800 hover:text-gray-300"
             }`}
           >
-            <Icon className="w-3 h-3" />
-            {label}
+            <Pin className="w-3 h-3" /> Pinned
           </button>
-        ))}
 
-        <button
-          onClick={() => toggle("pinned", !filters.pinned)}
-          className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-            filters.pinned
-              ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
-              : "bg-gray-900/50 text-gray-500 border border-gray-800 hover:text-gray-300"
-          }`}
-        >
-          <Pin className="w-3 h-3" /> Pinned
-        </button>
-
-        <button
-          onClick={() => toggle("favorite", !filters.favorite)}
-          className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-            filters.favorite
-              ? "bg-red-500/20 text-red-300 border border-red-500/40"
-              : "bg-gray-900/50 text-gray-500 border border-gray-800 hover:text-gray-300"
-          }`}
-        >
-          <Heart className="w-3 h-3" /> Favorite
-        </button>
+          <button
+            onClick={() => toggle("favorite", !filters.favorite)}
+            className={`flex items-center gap-1 px-2 py-1 sm:px-2.5 rounded-lg text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap ${
+              filters.favorite
+                ? "bg-red-500/20 text-red-300 border border-red-500/40"
+                : "bg-gray-900/50 text-gray-500 border border-gray-800 hover:text-gray-300"
+            }`}
+          >
+            <Heart className="w-3 h-3" /> Favorite
+          </button>
+        </div>
       </div>
 
       {/* Теги */}
       {allTags.length > 0 && (
-        <div className="flex gap-1.5 flex-wrap">
-          {allTags.map((tag) => (
-            <button
-              key={tag}
-              onClick={() => toggleTag(tag)}
-              className={`px-2 py-0.5 rounded-md text-xs transition-all ${
-                filters.tags.includes(tag)
-                  ? "bg-blue-500/20 text-blue-300 border border-blue-500/40"
-                  : "bg-gray-900/50 text-gray-600 border border-gray-800 hover:text-gray-400"
-              }`}
-            >
-              #{tag}
-            </button>
-          ))}
+        <div className="overflow-x-auto -mx-1 px-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex gap-1.5 min-w-max">
+            {allTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => toggleTag(tag)}
+                className={`px-2 py-0.5 rounded-md text-[11px] sm:text-xs transition-all whitespace-nowrap ${
+                  filters.tags.includes(tag)
+                    ? "bg-blue-500/20 text-blue-300 border border-blue-500/40"
+                    : "bg-gray-900/50 text-gray-600 border border-gray-800 hover:text-gray-400"
+                }`}
+              >
+                #{tag}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
