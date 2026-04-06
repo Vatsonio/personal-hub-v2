@@ -10,6 +10,7 @@ import SavedSearchBar from "./components/SavedSearchBar";
 import { useSavedItems } from "./hooks/useSavedItems";
 import { useSavedSearch } from "./hooks/useSavedSearch";
 import type { SavedItem } from "@/types/domain";
+import { readSettings, SETTINGS_EVENT_NAME } from "@/lib/settings";
 
 type Props = {
   initialItems: SavedItem[];
@@ -50,6 +51,35 @@ export default function SavedClient({
     } catch {
       // silent
     }
+  }, []);
+
+  // Track whether bottom nav is visible (affects bottom offset)
+  const [bottomNavVisible, setBottomNavVisible] = useState(true);
+  useEffect(() => {
+    function check() {
+      const s = readSettings();
+      // On saved page, autoHide always hides the nav (we're not on /dashboard)
+      setBottomNavVisible(!s.bottomNavHidden && !s.bottomNavAutoHide);
+    }
+    check();
+    window.addEventListener(SETTINGS_EVENT_NAME, check);
+    window.addEventListener("storage", check);
+    return () => {
+      window.removeEventListener(SETTINGS_EVENT_NAME, check);
+      window.removeEventListener("storage", check);
+    };
+  }, []);
+
+  // On mobile: lock html+body scroll so only the feed scrolls (iOS Safari fix)
+  useEffect(() => {
+    if (window.matchMedia("(max-width: 639px)").matches) {
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+    };
   }, []);
 
   // "Connecting…" shimmer — show briefly on cold cloud start so users see
@@ -105,13 +135,15 @@ export default function SavedClient({
 
   return (
     <div
-      className="flex flex-col overflow-hidden px-4 pt-2 pb-3
+      className="flex flex-col overflow-hidden px-4 pt-2 pb-1
         sm:px-0 sm:pt-0 sm:pb-0 sm:h-[calc(100svh-4rem-env(safe-area-inset-top)-1rem-3.5rem-env(safe-area-inset-bottom))]
         fixed sm:static left-0 right-0
         sm:top-auto sm:bottom-auto sm:left-auto sm:right-auto"
       style={{
         top: "calc(4rem + env(safe-area-inset-top))",
-        bottom: "calc(3.5rem + env(safe-area-inset-bottom))"
+        bottom: bottomNavVisible
+          ? "calc(3.5rem + env(safe-area-inset-bottom))"
+          : "env(safe-area-inset-bottom)"
       }}
     >
       <div className="flex-shrink-0 bg-gray-950/95 backdrop-blur-sm pb-2">
@@ -234,7 +266,7 @@ export default function SavedClient({
       </div>
 
       {/* Стрічка */}
-      <div className="flex-1 overflow-y-auto min-h-0 mt-1">
+      <div className="flex-1 overflow-y-auto min-h-0 mt-1 overscroll-none">
         <SavedFeed
           items={filtered}
           allItems={items}

@@ -171,7 +171,7 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
   const isUploadMode = UPLOAD_TYPES.includes(type);
 
   return (
-    <div className="flex-shrink-0 mt-1 border-t border-gray-800/60 pt-2 sm:pt-3 pb-[calc(env(safe-area-inset-bottom)+0.25rem)]">
+    <div className="flex-shrink-0 mt-1 border-t border-gray-800/60 pt-2 sm:pt-3 pb-2">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}

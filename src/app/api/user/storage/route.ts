@@ -14,14 +14,20 @@ export async function GET() {
   ]);
 
   let used = 0;
-  const stream = minioClient.listObjects(BUCKET, `${session.user.id}/`, true);
-  await new Promise<void>((resolve, reject) => {
-    stream.on("data", (obj) => {
-      used += obj.size ?? 0;
-    });
-    stream.on("end", resolve);
-    stream.on("error", reject);
-  });
+  if (process.env.MINIO_ENDPOINT) {
+    try {
+      const stream = minioClient.listObjects(BUCKET, `${session.user.id}/`, true);
+      await new Promise<void>((resolve, reject) => {
+        stream.on("data", (obj) => {
+          used += obj.size ?? 0;
+        });
+        stream.on("end", resolve);
+        stream.on("error", reject);
+      });
+    } catch {
+      // MinIO unavailable (dev mode) — return 0
+    }
+  }
 
   return NextResponse.json({
     used,
