@@ -5,6 +5,11 @@ import { applyTheme, readSettings, SETTINGS_EVENT_NAME } from "@/lib/settings";
 
 export default function SettingsHydrator() {
   useEffect(() => {
+    // Lock to portrait on mobile devices that support the API
+    if (screen?.orientation?.lock) {
+      screen.orientation.lock("portrait").catch(() => {});
+    }
+
     applyTheme(readSettings().theme);
 
     function onSettingsChanged() {

@@ -117,10 +117,11 @@ export default function WeatherWidget() {
   return (
     <div className="flex items-center gap-1.5 bg-gray-800/50 rounded-xl px-2.5 py-1.5 border border-gray-700/50">
       <WeatherIcon icon={weather.icon} />
-      <span className="text-white text-sm font-medium">{weather.temp}°C</span>
-      <span className="text-gray-400 text-xs hidden sm:block capitalize">
-        {weather.description}
-      </span>
+      <div className="flex flex-col leading-none">
+        <span className="text-white text-sm font-medium">{weather.temp}°C</span>
+        <span className="text-gray-400 text-[10px] capitalize mt-0.5">{weather.description}</span>
+      </div>
+      <span className="text-gray-500 text-[10px] hidden sm:block">{weather.city}</span>
     </div>
   );
 }

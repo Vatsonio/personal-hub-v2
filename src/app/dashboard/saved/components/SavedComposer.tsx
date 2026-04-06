@@ -259,19 +259,17 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
           )}
         </button>
       ) : (
-        <div className="flex items-end gap-2 bg-gray-900/60 border border-gray-800 rounded-2xl px-3 py-2 focus-within:border-violet-500/50 transition-colors">
+        <div className="flex items-center gap-2 bg-gray-900/60 border border-gray-800 rounded-2xl px-3 py-2 focus-within:border-violet-500/50 transition-colors">
           <textarea
             ref={textareaRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={
-              type === "link"
-                ? "Вставте посилання…"
-                : "Збережи текст, ідею або нотатку… (#теги підтримуються)"
+              type === "link" ? "Вставте посилання…" : "Збережи текст, ідею або нотатку…"
             }
             rows={1}
-            className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 resize-none focus:outline-none leading-relaxed min-h-[2.5rem] max-h-40"
+            className="flex-1 bg-transparent text-base sm:text-sm text-white placeholder-gray-500 resize-none focus:outline-none leading-relaxed min-h-[2.5rem] max-h-40"
           />
           <button
             onClick={handleSubmit}

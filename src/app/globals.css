@@ -2,6 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Portrait-only lock for mobile */
+@media screen and (max-width: 767px) and (orientation: landscape) {
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background-color: #030712;
+  }
+  body::after {
+    content: "Поверни телефон вертикально";
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #a78bfa;
+    font-size: 1rem;
+    font-family: inherit;
+  }
+}
+
 :root {
   color-scheme: dark;
 }
@@ -134,10 +157,26 @@ body.theme-glass .bg-gray-900 {
 
 /* Input fields */
 body.theme-glass .bg-gray-800,
-body.theme-glass .bg-gray-800\/60 {
+body.theme-glass .bg-gray-800\/60,
+body.theme-glass .bg-gray-800\/70,
+body.theme-glass .bg-gray-800\/80 {
   background-color: rgba(255, 255, 255, 0.06) !important;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+}
+
+body.theme-glass .bg-gray-700,
+body.theme-glass .bg-gray-700\/60 {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+body.theme-glass .bg-gray-900\/40,
+body.theme-glass .bg-gray-900\/50 {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 /* Borders */
@@ -149,11 +188,11 @@ body.theme-glass .border-gray-700 {
   border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
-/* Saved page search/filters/composer bars */
+/* Saved page search/filters/composer bars — transparent so aurora shows through */
 body.theme-glass .bg-gray-950\/95 {
-  background-color: rgba(6, 6, 26, 0.65) !important;
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  background-color: rgba(6, 6, 26, 0.25) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 /* Bottom nav */

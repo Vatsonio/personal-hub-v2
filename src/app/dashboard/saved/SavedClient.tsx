@@ -37,6 +37,13 @@ export default function SavedClient({
 }: Props) {
   const [userId] = useState(initialUserId);
   const { t } = useLocale();
+  const [isGlass, setIsGlass] = useState(false);
+  useEffect(() => {
+    const check = () => setIsGlass(document.body.classList.contains("theme-glass"));
+    check();
+    window.addEventListener("personal-hub-settings-changed", check);
+    return () => window.removeEventListener("personal-hub-settings-changed", check);
+  }, []);
   const [storageUsed, setStorageUsed] = useState(initialStorageUsed);
   const [storageLimit, setStorageLimit] = useState(initialStorageLimit);
 
@@ -134,173 +141,181 @@ export default function SavedClient({
   const hasSelection = selectedIds.size > 0;
 
   return (
-    <div
-      className="flex flex-col overflow-hidden px-4 pt-2 pb-1
+    <>
+      <div
+        className="flex flex-col overflow-hidden px-4 pt-2 pb-1
         sm:px-0 sm:pt-0 sm:pb-0 sm:h-[calc(100svh-4rem-env(safe-area-inset-top)-1rem-3.5rem-env(safe-area-inset-bottom))]
         fixed sm:static left-0 right-0
         sm:top-auto sm:bottom-auto sm:left-auto sm:right-auto"
-      style={{
-        top: "calc(4rem + env(safe-area-inset-top))",
-        bottom: bottomNavVisible
-          ? "calc(3.5rem + env(safe-area-inset-bottom))"
-          : "env(safe-area-inset-bottom)"
-      }}
-    >
-      <div className="flex-shrink-0 bg-gray-950/95 backdrop-blur-sm pb-2">
-        {/* Header — hidden on mobile (bottom nav handles navigation) */}
-        <div className="hidden sm:flex items-center gap-3 mb-3 flex-shrink-0">
-          <div className="w-9 h-9 bg-gradient-to-br from-violet-500 to-blue-500 rounded-xl flex items-center justify-center shadow-md shadow-violet-500/20">
-            <BookMarked className="w-5 h-5 text-white" />
+        style={{
+          top: "calc(4rem + env(safe-area-inset-top))",
+          bottom: bottomNavVisible
+            ? "calc(3.5rem + env(safe-area-inset-bottom))"
+            : "env(safe-area-inset-bottom)"
+        }}
+      >
+        <div
+          className={`flex-shrink-0 pb-2 ${isGlass ? "bg-transparent" : "bg-gray-950/95 backdrop-blur-sm"}`}
+        >
+          {/* Header — hidden on mobile (bottom nav handles navigation) */}
+          <div className="hidden sm:flex items-center gap-3 mb-3 flex-shrink-0">
+            <div className="w-9 h-9 bg-gradient-to-br from-violet-500 to-blue-500 rounded-xl flex items-center justify-center shadow-md shadow-violet-500/20">
+              <BookMarked className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-white font-semibold text-lg leading-none">{t("saved.title")}</h1>
+              <p className="text-gray-500 text-xs mt-0.5">{t("saved.count", items.length)}</p>
+            </div>
+            {storageLimit > 0 && (
+              <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                <span className="text-xs text-gray-500">
+                  {fmtBytes(storageUsed)} / {fmtBytes(storageLimit)}
+                </span>
+                <div className="w-20 h-1 bg-gray-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-violet-500 rounded-full transition-all"
+                    style={{
+                      width: `${Math.min(100, Math.round((storageUsed / storageLimit) * 100))}%`
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-white font-semibold text-lg leading-none">{t("saved.title")}</h1>
-            <p className="text-gray-500 text-xs mt-0.5">{t("saved.count", items.length)}</p>
-          </div>
+
+          {/* Mobile storage bar */}
           {storageLimit > 0 && (
-            <div className="flex flex-col items-end gap-1 flex-shrink-0">
-              <span className="text-xs text-gray-500">
-                {fmtBytes(storageUsed)} / {fmtBytes(storageLimit)}
-              </span>
-              <div className="w-20 h-1 bg-gray-800 rounded-full overflow-hidden">
+            <div className="sm:hidden flex items-center gap-2 mb-2 flex-shrink-0">
+              <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-violet-500 rounded-full transition-all"
+                  className="h-full bg-violet-500/70 rounded-full transition-all"
                   style={{
                     width: `${Math.min(100, Math.round((storageUsed / storageLimit) * 100))}%`
                   }}
                 />
               </div>
+              <span className="text-xs text-gray-500 flex-shrink-0">
+                {fmtBytes(storageUsed)} / {fmtBytes(storageLimit)}
+              </span>
+            </div>
+          )}
+
+          <SavedSearchBar value={rawSearch} onChange={setRawSearch} loading={ftsLoading} />
+          <SavedFilters filters={filters} onChange={setFilters} items={items} />
+
+          {/* Bulk action bar — slides in when items are selected */}
+          {hasSelection && (
+            <div className="flex-shrink-0 flex items-center gap-2 mt-2 px-3 py-2 bg-gray-900/80 border border-gray-700 rounded-xl backdrop-blur-sm animate-fade-in">
+              <span className="text-xs text-gray-400 font-medium mr-1">
+                {selectedIds.size} вибрано
+              </span>
+
+              {tagging ? (
+                <>
+                  <input
+                    autoFocus
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleBulkTag()}
+                    placeholder="#тег або кілька через пробіл"
+                    className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-violet-500/60"
+                  />
+                  <button
+                    onClick={handleBulkTag}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-violet-500/20 text-violet-300 text-xs hover:bg-violet-500/30 transition-all"
+                  >
+                    <Check className="w-3 h-3" /> Застосувати
+                  </button>
+                  <button
+                    onClick={() => setTagging(false)}
+                    className="text-gray-600 hover:text-gray-400"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setTagging(true)}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-500/15 text-blue-300 text-xs hover:bg-blue-500/25 transition-all border border-blue-500/20"
+                  >
+                    <Tag className="w-3 h-3" /> Теги
+                  </button>
+                  <button
+                    onClick={handleBulkDelete}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-500/15 text-red-300 text-xs hover:bg-red-500/25 transition-all border border-red-500/20"
+                  >
+                    <Trash2 className="w-3 h-3" /> Видалити
+                  </button>
+                </>
+              )}
+
+              <button
+                onClick={clearSelection}
+                className="ml-auto text-gray-600 hover:text-gray-400 transition-colors"
+                title="Скасувати"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* DB error banner — shows if migration wasn't applied or Supabase is unreachable */}
+          {dbError && (
+            <div className="flex-shrink-0 flex items-center gap-2 mt-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-300">
+              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>Помилка з&apos;єднання з базою даних. Дані можуть бути застарілими.</span>
+            </div>
+          )}
+
+          {/* Connecting shimmer — shown on cold cloud start */}
+          {connecting && (
+            <div className="flex-shrink-0 flex items-center gap-2 mt-2 px-3 py-1.5 bg-gray-800/60 border border-gray-700/50 rounded-xl text-xs text-gray-500">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              <span>Підключення до хмари…</span>
             </div>
           )}
         </div>
 
-        {/* Mobile storage bar */}
-        {storageLimit > 0 && (
-          <div className="sm:hidden flex items-center gap-2 mb-1.5 flex-shrink-0">
-            <div className="flex-1 h-0.5 bg-gray-800 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-violet-500/60 rounded-full"
-                style={{
-                  width: `${Math.min(100, Math.round((storageUsed / storageLimit) * 100))}%`
-                }}
-              />
-            </div>
-            <span className="text-[10px] text-gray-600">{fmtBytes(storageUsed)}</span>
-          </div>
-        )}
-
-        <SavedSearchBar value={rawSearch} onChange={setRawSearch} loading={ftsLoading} />
-        <SavedFilters filters={filters} onChange={setFilters} items={items} />
-
-        {/* Bulk action bar — slides in when items are selected */}
-        {hasSelection && (
-          <div className="flex-shrink-0 flex items-center gap-2 mt-2 px-3 py-2 bg-gray-900/80 border border-gray-700 rounded-xl backdrop-blur-sm animate-fade-in">
-            <span className="text-xs text-gray-400 font-medium mr-1">
-              {selectedIds.size} вибрано
-            </span>
-
-            {tagging ? (
-              <>
-                <input
-                  autoFocus
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleBulkTag()}
-                  placeholder="#тег або кілька через пробіл"
-                  className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-violet-500/60"
-                />
-                <button
-                  onClick={handleBulkTag}
-                  className="flex items-center gap-1 px-2 py-1 rounded-lg bg-violet-500/20 text-violet-300 text-xs hover:bg-violet-500/30 transition-all"
-                >
-                  <Check className="w-3 h-3" /> Застосувати
-                </button>
-                <button
-                  onClick={() => setTagging(false)}
-                  className="text-gray-600 hover:text-gray-400"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => setTagging(true)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-500/15 text-blue-300 text-xs hover:bg-blue-500/25 transition-all border border-blue-500/20"
-                >
-                  <Tag className="w-3 h-3" /> Теги
-                </button>
-                <button
-                  onClick={handleBulkDelete}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-500/15 text-red-300 text-xs hover:bg-red-500/25 transition-all border border-red-500/20"
-                >
-                  <Trash2 className="w-3 h-3" /> Видалити
-                </button>
-              </>
-            )}
-
-            <button
-              onClick={clearSelection}
-              className="ml-auto text-gray-600 hover:text-gray-400 transition-colors"
-              title="Скасувати"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        {/* DB error banner — shows if migration wasn't applied or Supabase is unreachable */}
-        {dbError && (
-          <div className="flex-shrink-0 flex items-center gap-2 mt-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-300">
-            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-            <span>Помилка з&apos;єднання з базою даних. Дані можуть бути застарілими.</span>
-          </div>
-        )}
-
-        {/* Connecting shimmer — shown on cold cloud start */}
-        {connecting && (
-          <div className="flex-shrink-0 flex items-center gap-2 mt-2 px-3 py-1.5 bg-gray-800/60 border border-gray-700/50 rounded-xl text-xs text-gray-500">
-            <Loader2 className="w-3 h-3 animate-spin" />
-            <span>Підключення до хмари…</span>
-          </div>
-        )}
-      </div>
-
-      {/* Стрічка */}
-      <div className="flex-1 overflow-y-auto min-h-0 mt-1 overscroll-none">
-        <SavedFeed
-          items={filtered}
-          allItems={items}
-          selectedIds={selectedIds}
-          onToggleSelect={toggleSelect}
-          onPin={(id) => updateItem(id, { is_pinned: true })}
-          onUnpin={(id) => updateItem(id, { is_pinned: false })}
-          onFavorite={(id) => updateItem(id, { is_favorite: true })}
-          onUnfavorite={(id) => updateItem(id, { is_favorite: false })}
-          onDelete={async (id) => {
-            await deleteItem(id);
-            refreshStorage();
-          }}
-          onReply={setReplyTo}
-          onUpdateMeta={(id, meta) =>
-            updateItem(id, {
-              metadata: { ...(items.find((i) => i.id === id)?.metadata ?? {}), ...meta }
-            })
-          }
-          onSetReminder={(id, iso) => updateItem(id, { reminder_at: iso })}
-        />
-      </div>
-
-      {/* Composer — hidden during bulk selection */}
-      {!hasSelection && (
-        <div className="flex-shrink-0 bg-gray-950/95 backdrop-blur-sm pt-1">
-          <SavedComposer
-            onAdd={addItem}
-            onUploadDone={refreshStorage}
-            replyTo={replyTo}
-            onCancelReply={() => setReplyTo(null)}
+        {/* Стрічка */}
+        <div className="flex-1 overflow-y-auto min-h-0 mt-1 overscroll-none">
+          <SavedFeed
+            items={filtered}
+            allItems={items}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+            onPin={(id) => updateItem(id, { is_pinned: true })}
+            onUnpin={(id) => updateItem(id, { is_pinned: false })}
+            onFavorite={(id) => updateItem(id, { is_favorite: true })}
+            onUnfavorite={(id) => updateItem(id, { is_favorite: false })}
+            onDelete={async (id) => {
+              await deleteItem(id);
+              refreshStorage();
+            }}
+            onReply={setReplyTo}
+            onUpdateMeta={(id, meta) =>
+              updateItem(id, {
+                metadata: { ...(items.find((i) => i.id === id)?.metadata ?? {}), ...meta }
+              })
+            }
+            onSetReminder={(id, iso) => updateItem(id, { reminder_at: iso })}
           />
         </div>
-      )}
-    </div>
+
+        {/* Composer — hidden during bulk selection */}
+        {!hasSelection && (
+          <div
+            className={`flex-shrink-0 pt-1 ${isGlass ? "bg-transparent" : "bg-gray-950/95 backdrop-blur-sm"}`}
+          >
+            <SavedComposer
+              onAdd={addItem}
+              onUploadDone={refreshStorage}
+              replyTo={replyTo}
+              onCancelReply={() => setReplyTo(null)}
+            />
+          </div>
+        )}
+      </div>
+    </>
   );
 }

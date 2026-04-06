@@ -90,7 +90,6 @@ export default function DashboardHeader({
             <span className="text-white font-mono font-bold text-sm leading-none">{time}</span>
             <span className="text-gray-400 text-xs mt-0.5 capitalize">{date}</span>
           </div>
-          <div className="sm:hidden text-white font-mono font-bold text-sm">{time}</div>
           <div className="hidden sm:block">
             <UserNav session={session} savedCount={savedCount} />
           </div>
