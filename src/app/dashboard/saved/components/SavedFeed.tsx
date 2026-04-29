@@ -19,6 +19,11 @@ type Props = {
   onReply: (item: SavedItem) => void;
   onUpdateMeta: (id: string, meta: Record<string, string>) => void;
   onSetReminder: (id: string, iso: string | null) => void;
+  onOpenMenu?: (ctx: { x: number; y: number; item: SavedItem }) => void;
+  selectionMode?: boolean;
+  expandedMdIds?: Set<string>;
+  reminderPickerId?: string | null;
+  onCloseReminderPicker?: () => void;
 };
 
 export default function SavedFeed({
@@ -33,7 +38,12 @@ export default function SavedFeed({
   onDelete,
   onReply,
   onUpdateMeta,
-  onSetReminder
+  onSetReminder,
+  onOpenMenu,
+  selectionMode = false,
+  expandedMdIds,
+  reminderPickerId,
+  onCloseReminderPicker
 }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const dateRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -113,6 +123,11 @@ export default function SavedFeed({
         onUpdateMeta={(meta) => onUpdateMeta(item.id, meta)}
         onSetReminder={(iso) => onSetReminder(item.id, iso)}
         onOpenImage={() => openLightbox(item)}
+        onOpenMenu={onOpenMenu}
+        selectionMode={selectionMode}
+        showMd={expandedMdIds?.has(item.id)}
+        showReminderPicker={reminderPickerId === item.id}
+        onCloseReminderPicker={onCloseReminderPicker}
       />
     );
   }
@@ -127,18 +142,6 @@ export default function SavedFeed({
         />
       )}
       <div className="flex flex-col px-2 pb-4">
-        <div className="flex items-center gap-2 mb-2 px-2">
-          <input
-            type="date"
-            className="bg-gray-900 border border-gray-800 rounded-lg px-2 py-1 text-xs text-gray-400 focus:outline-none focus:border-violet-500/60"
-            onChange={(e) => {
-              const val = e.target.value;
-              const target = dateRefs.current.get(new Date(val + "T00:00:00").toDateString());
-              target?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }}
-          />
-          <span className="text-xs text-gray-600">{t("feed.jump_to_date")}</span>
-        </div>
         {rendered}
         <div ref={bottomRef} />
       </div>

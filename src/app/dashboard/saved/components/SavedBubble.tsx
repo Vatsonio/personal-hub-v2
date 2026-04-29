@@ -1,24 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Pin,
-  PinOff,
-  Heart,
-  HeartOff,
-  Trash2,
-  Reply,
-  Copy,
-  FileUp,
-  ChevronDown,
-  ChevronUp,
-  Check,
-  FileText,
-  FileDown,
-  Bell,
-  BellOff,
-  MoreHorizontal
-} from "lucide-react";
+import { useRef, useState } from "react";
+import { Pin, Heart, Check, Bell, FileUp, ChevronUp, ChevronDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import LinkPreview from "./LinkPreview";
 import type { SavedItem } from "@/types/domain";
@@ -37,6 +20,11 @@ type Props = {
   onUpdateMeta?: (meta: Record<string, string>) => void;
   onSetReminder: (iso: string | null) => void;
   onOpenImage?: () => void;
+  onOpenMenu?: (ctx: { x: number; y: number; item: SavedItem }) => void;
+  selectionMode?: boolean;
+  showMd?: boolean;
+  showReminderPicker?: boolean;
+  onCloseReminderPicker?: () => void;
 };
 
 function formatTime(iso: string) {
@@ -73,20 +61,23 @@ export default function SavedBubble({
   replyParent,
   isSelected,
   onToggleSelect,
-  onPin,
-  onUnpin,
-  onFavorite,
-  onUnfavorite,
-  onDelete,
-  onReply,
   onUpdateMeta,
   onSetReminder,
-  onOpenImage
+  onOpenImage,
+  onOpenMenu,
+  selectionMode = false,
+  showMd: showMdProp,
+  showReminderPicker = false,
+  onCloseReminderPicker
 }: Props) {
-  const [showMd, setShowMd] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [showReminderPicker, setShowReminderPicker] = useState(false);
-  const [showActions, setShowActions] = useState(false);
+  const [showMdLocal, setShowMdLocal] = useState(false);
+  const showMd = showMdProp ?? showMdLocal;
+
+  const longPress = useRef<{ timer: ReturnType<typeof setTimeout> | null; x: number; y: number }>({
+    timer: null,
+    x: 0,
+    y: 0
+  });
 
   const isMediaOnly =
     item.content_type === "image" &&
@@ -95,35 +86,37 @@ export default function SavedBubble({
     item.tags.length === 0 &&
     !item.reminder_at;
 
-  function handleExportMd() {
-    const lines: string[] = [];
-    if (item.title) lines.push(`# ${item.title}`, "");
-    if (item.content_type === "link" && item.source_url) lines.push(item.source_url);
-    else if (item.content) lines.push(item.content);
-    if (item.tags.length > 0) lines.push("", item.tags.map((t) => `#${t}`).join(" "));
-    lines.push("", `_Збережено: ${new Date(item.created_at).toLocaleString("uk-UA")}_`);
-    const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `saved-${item.id.slice(0, 8)}.md`;
-    a.click();
-  }
-
-  function handleExportJson() {
-    const blob = new Blob([JSON.stringify(item, null, 2)], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `saved-${item.id.slice(0, 8)}.json`;
-    a.click();
-  }
-
-  async function handleCopy() {
-    const text = item.content_type === "link" ? item.source_url : item.content;
-    if (!text) return;
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (selectionMode) return;
+    const t = e.touches[0];
+    longPress.current.x = t.clientX;
+    longPress.current.y = t.clientY;
+    longPress.current.timer = setTimeout(() => {
+      onOpenMenu?.({ x: t.clientX, y: t.clientY, item });
+    }, 500);
+  };
+  const onTouchEnd = () => {
+    if (longPress.current.timer) clearTimeout(longPress.current.timer);
+    longPress.current.timer = null;
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    if (
+      Math.abs(t.clientX - longPress.current.x) > 8 ||
+      Math.abs(t.clientY - longPress.current.y) > 8
+    ) {
+      if (longPress.current.timer) clearTimeout(longPress.current.timer);
+      longPress.current.timer = null;
+    }
+  };
+  const onContextMenuHandler = (e: React.MouseEvent) => {
+    if (selectionMode) return;
+    e.preventDefault();
+    onOpenMenu?.({ x: e.clientX, y: e.clientY, item });
+  };
+  const onClick = () => {
+    if (selectionMode) onToggleSelect();
+  };
 
   const bubbleBg = isMediaOnly
     ? "bg-transparent"
@@ -136,10 +129,37 @@ export default function SavedBubble({
   const bubblePad = isMediaOnly ? "p-0" : "px-3 py-2";
 
   return (
-    <div className="group relative flex justify-start mb-1.5 px-2" data-bubble-id={item.id}>
-      {/* Bubble shell */}
+    <div
+      className={`relative flex justify-start mb-1.5 px-2 items-center gap-2 transition-colors ${
+        selectionMode && isSelected ? "bg-violet-500/10" : ""
+      }`}
+      data-bubble-id={item.id}
+    >
+      {/* Selection checkbox — always visible in selection mode */}
+      {selectionMode && (
+        <button
+          type="button"
+          onClick={onToggleSelect}
+          className={`flex-shrink-0 w-6 h-6 rounded-full border flex items-center justify-center transition-all ${
+            isSelected ? "bg-violet-500 border-violet-500" : "border-gray-600 bg-transparent"
+          }`}
+          title={isSelected ? "Зняти вибір" : "Вибрати"}
+        >
+          {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
+        </button>
+      )}
+
       <div
-        className={`relative max-w-[80%] sm:max-w-[70%] rounded-2xl overflow-hidden transition-colors ${bubbleBg} ${bubblePad}`}
+        onClick={onClick}
+        onContextMenu={onContextMenuHandler}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchEnd}
+        onTouchMove={onTouchMove}
+        className={`max-w-[80%] sm:max-w-[70%] rounded-2xl relative overflow-hidden transition-shadow select-none ${bubbleBg} ${bubblePad} ${
+          selectionMode ? "cursor-pointer" : ""
+        }`}
+        style={{ WebkitTouchCallout: "none" }}
       >
         {/* Reply quote */}
         {replyParent && (
@@ -192,20 +212,29 @@ export default function SavedBubble({
                 <LinkifiedText text={item.content} />
               </p>
             )}
-            <button
-              onClick={() => setShowMd((v) => !v)}
-              className="mt-1 flex items-center gap-1 text-[11px] text-gray-500 hover:text-gray-300 transition-colors"
-            >
-              {showMd ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-              {showMd ? "Сховати MD" : "MD preview"}
-            </button>
+            {showMdProp === undefined && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMdLocal((v) => !v);
+                }}
+                className="mt-1 flex items-center gap-1 text-[11px] text-gray-500 hover:text-gray-300 transition-colors"
+              >
+                {showMd ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                {showMd ? "Сховати MD" : "MD preview"}
+              </button>
+            )}
           </div>
         )}
 
         {/* Image */}
         {item.content_type === "image" && item.source_url && (
           <button
-            onClick={onOpenImage}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!selectionMode) onOpenImage?.();
+              else onToggleSelect();
+            }}
             className="block text-left w-full focus:outline-none"
             title="Відкрити"
           >
@@ -272,7 +301,7 @@ export default function SavedBubble({
           </div>
         )}
 
-        {/* Time + indicators — inside bubble bottom-right */}
+        {/* Time + indicators */}
         <div
           className={`absolute right-2 bottom-1.5 flex items-center gap-1 text-[10.5px] ${
             isMediaOnly
@@ -285,116 +314,6 @@ export default function SavedBubble({
           {item.reminder_at && <Bell className="w-3 h-3 text-yellow-300" />}
           <span className="font-mono">{formatTime(item.created_at)}</span>
         </div>
-
-        {/* Hover checkbox — top-left, subtle */}
-        <button
-          onClick={onToggleSelect}
-          className={`absolute top-1.5 left-1.5 w-4 h-4 rounded-full flex items-center justify-center transition-all ${
-            isSelected
-              ? "bg-violet-500 opacity-100"
-              : "bg-black/40 backdrop-blur-sm border border-white/30 opacity-0 group-hover:opacity-100"
-          }`}
-          title={isSelected ? "Зняти вибір" : "Вибрати"}
-        >
-          {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
-        </button>
-      </div>
-
-      {/* Mobile "⋮" trigger — visible on touch devices */}
-      <button
-        onClick={() => setShowActions((v) => !v)}
-        className="sm:hidden absolute right-3 top-1 p-1.5 rounded-lg text-gray-500 hover:text-gray-300 z-10"
-        title="Дії"
-      >
-        <MoreHorizontal className="w-4 h-4" />
-      </button>
-
-      {/* Actions overlay — hover on desktop, toggle on mobile */}
-      <div
-        className={`absolute right-3 top-1 items-center gap-0.5 bg-gray-900/95 backdrop-blur-sm border border-white/10 rounded-xl px-1 py-0.5 shadow-xl z-10 ${
-          showActions ? "flex" : "hidden group-hover:flex"
-        }`}
-      >
-        <ActionBtn
-          onClick={() => {
-            onReply();
-            setShowActions(false);
-          }}
-          title="Відповісти"
-        >
-          <Reply className="w-3.5 h-3.5" />
-        </ActionBtn>
-        <ActionBtn onClick={handleCopy} title="Копіювати">
-          {copied ? (
-            <Check className="w-3.5 h-3.5 text-emerald-400" />
-          ) : (
-            <Copy className="w-3.5 h-3.5" />
-          )}
-        </ActionBtn>
-        <ActionBtn
-          onClick={() => {
-            handleExportMd();
-            setShowActions(false);
-          }}
-          title="Експорт .md"
-        >
-          <FileText className="w-3.5 h-3.5" />
-        </ActionBtn>
-        <ActionBtn
-          onClick={() => {
-            handleExportJson();
-            setShowActions(false);
-          }}
-          title="Експорт .json"
-        >
-          <FileDown className="w-3.5 h-3.5" />
-        </ActionBtn>
-        <ActionBtn
-          onClick={() => {
-            (item.is_pinned ? onUnpin : onPin)();
-            setShowActions(false);
-          }}
-          title={item.is_pinned ? "Відкріпити" : "Закріпити"}
-        >
-          {item.is_pinned ? (
-            <PinOff className="w-3.5 h-3.5 text-amber-400" />
-          ) : (
-            <Pin className="w-3.5 h-3.5" />
-          )}
-        </ActionBtn>
-        <ActionBtn
-          onClick={() => {
-            (item.is_favorite ? onUnfavorite : onFavorite)();
-            setShowActions(false);
-          }}
-          title={item.is_favorite ? "Прибрати" : "Обране"}
-        >
-          {item.is_favorite ? (
-            <HeartOff className="w-3.5 h-3.5 text-rose-400" />
-          ) : (
-            <Heart className="w-3.5 h-3.5" />
-          )}
-        </ActionBtn>
-        <ActionBtn
-          onClick={() => setShowReminderPicker((v) => !v)}
-          title={item.reminder_at ? "Нагадування встановлено" : "Нагадати"}
-        >
-          {item.reminder_at ? (
-            <BellOff className="w-3.5 h-3.5 text-yellow-300" />
-          ) : (
-            <Bell className="w-3.5 h-3.5" />
-          )}
-        </ActionBtn>
-        <ActionBtn
-          onClick={() => {
-            onDelete();
-            setShowActions(false);
-          }}
-          title="Видалити"
-          className="hover:text-rose-400 hover:bg-rose-400/10"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </ActionBtn>
       </div>
 
       {/* Reminder picker */}
@@ -407,14 +326,14 @@ export default function SavedBubble({
             className="bg-gray-800 border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-violet-500/60"
             onChange={(e) => {
               onSetReminder(e.target.value ? new Date(e.target.value).toISOString() : null);
-              setShowReminderPicker(false);
+              onCloseReminderPicker?.();
             }}
           />
           {item.reminder_at && (
             <button
               onClick={() => {
                 onSetReminder(null);
-                setShowReminderPicker(false);
+                onCloseReminderPicker?.();
               }}
               className="text-xs text-rose-400 hover:text-rose-300 text-left"
             >
@@ -424,28 +343,6 @@ export default function SavedBubble({
         </div>
       )}
     </div>
-  );
-}
-
-function ActionBtn({
-  onClick,
-  title,
-  children,
-  className = ""
-}: {
-  onClick: () => void;
-  title: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      className={`p-1.5 rounded-lg text-gray-300 hover:bg-white/10 transition-all ${className}`}
-    >
-      {children}
-    </button>
   );
 }
 

@@ -8,6 +8,7 @@ import SavedFilters from "./components/SavedFilters";
 import SavedHeader from "./components/SavedHeader";
 import SavedPinnedBar from "./components/SavedPinnedBar";
 import SavedPinnedView from "./components/SavedPinnedView";
+import SavedContextMenu, { type CtxState, type CtxActionId } from "./components/SavedContextMenu";
 import { useSavedItems } from "./hooks/useSavedItems";
 import { useSavedSearch } from "./hooks/useSavedSearch";
 import type { SavedItem } from "@/types/domain";
@@ -108,6 +109,86 @@ export default function SavedClient({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [tagInput, setTagInput] = useState("");
   const [tagging, setTagging] = useState(false);
+
+  // Context menu state
+  const [ctx, setCtx] = useState<CtxState>(null);
+  const [expandedMdIds, setExpandedMdIds] = useState<Set<string>>(new Set());
+  const [reminderPickerId, setReminderPickerId] = useState<string | null>(null);
+
+  const handleCopy = useCallback(async (item: SavedItem) => {
+    const text = item.content_type === "link" ? item.source_url : item.content;
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const handleExportMd = useCallback((item: SavedItem) => {
+    const lines: string[] = [];
+    if (item.title) lines.push(`# ${item.title}`, "");
+    if (item.content_type === "link" && item.source_url) lines.push(item.source_url);
+    else if (item.content) lines.push(item.content);
+    if (item.tags.length > 0) lines.push("", item.tags.map((t) => `#${t}`).join(" "));
+    lines.push("", `_Збережено: ${new Date(item.created_at).toLocaleString("uk-UA")}_`);
+    const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `saved-${item.id.slice(0, 8)}.md`;
+    a.click();
+  }, []);
+
+  const handleExportJson = useCallback((item: SavedItem) => {
+    const blob = new Blob([JSON.stringify(item, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `saved-${item.id.slice(0, 8)}.json`;
+    a.click();
+  }, []);
+
+  const handleCtxAction = useCallback(
+    (id: CtxActionId, item: SavedItem) => {
+      switch (id) {
+        case "reply":
+          setReplyTo(item);
+          break;
+        case "copy":
+          handleCopy(item);
+          break;
+        case "edit":
+          setExpandedMdIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(item.id)) next.delete(item.id);
+            else next.add(item.id);
+            return next;
+          });
+          break;
+        case "pin":
+          updateItem(item.id, { is_pinned: !item.is_pinned });
+          break;
+        case "favorite":
+          updateItem(item.id, { is_favorite: !item.is_favorite });
+          break;
+        case "remind":
+          setReminderPickerId(item.id);
+          break;
+        case "export_md":
+          handleExportMd(item);
+          break;
+        case "export_json":
+          handleExportJson(item);
+          break;
+        case "delete":
+          deleteItem(item.id).then(() => refreshStorage());
+          break;
+        case "select":
+          setSelectedIds(new Set([item.id]));
+          break;
+      }
+    },
+    [handleCopy, handleExportMd, handleExportJson, updateItem, deleteItem, refreshStorage]
+  );
 
   // Pinned management
   const pinned = items
@@ -299,6 +380,10 @@ export default function SavedClient({
               })
             }
             onSetReminder={(id, iso) => updateItem(id, { reminder_at: iso })}
+            onOpenMenu={setCtx}
+            expandedMdIds={expandedMdIds}
+            reminderPickerId={reminderPickerId}
+            onCloseReminderPicker={() => setReminderPickerId(null)}
           />
         </div>
 
@@ -327,6 +412,8 @@ export default function SavedClient({
           })
         }
       />
+
+      <SavedContextMenu ctx={ctx} onClose={() => setCtx(null)} onAction={handleCtxAction} />
 
       {/* search/loading indicator (kept for ftsLoading hint) */}
       {ftsLoading && (
