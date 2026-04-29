@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, X, Link2, FileUp, Type, Image, Mic, Loader2, AlertTriangle } from "lucide-react";
+import { Send, X, FileUp, Loader2, AlertTriangle, Paperclip } from "lucide-react";
 import type { SavedItem, SavedContentType, CreateSavedItemInput } from "@/types/domain";
+import SavedAttachSheet from "./SavedAttachSheet";
 
 type Props = {
   onAdd: (input: CreateSavedItemInput) => void;
@@ -10,14 +11,6 @@ type Props = {
   replyTo: SavedItem | null;
   onCancelReply: () => void;
 };
-
-const TYPES: { value: SavedContentType; Icon: React.ElementType; label: string }[] = [
-  { value: "text", Icon: Type, label: "Текст" },
-  { value: "link", Icon: Link2, label: "Посилання" },
-  { value: "file", Icon: FileUp, label: "Файл" },
-  { value: "image", Icon: Image, label: "Зображення" },
-  { value: "voice", Icon: Mic, label: "Голос" }
-];
 
 const UPLOAD_TYPES: SavedContentType[] = ["file", "image"];
 
@@ -44,6 +37,7 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [attachOpen, setAttachOpen] = useState(false);
 
   // Auto-dismiss upload errors after 4 seconds
   useEffect(() => {
@@ -222,24 +216,11 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
         </div>
       )}
 
-      {/* Type selector — compact pill row */}
-      <div className="flex gap-1.5 mb-2 overflow-x-auto -mx-1 px-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        {TYPES.map(({ value, Icon, label }) => (
-          <button
-            key={value}
-            onClick={() => handleTypeSelect(value)}
-            title={label}
-            className={`flex items-center gap-1 h-7 px-2.5 rounded-full text-[11.5px] font-medium border backdrop-blur-md transition-all whitespace-nowrap ${
-              type === value
-                ? "bg-violet-500/20 text-violet-200 border-violet-400/30"
-                : "bg-gray-900/60 text-gray-400 border-white/5 hover:text-gray-200"
-            }`}
-          >
-            <Icon className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{label}</span>
-          </button>
-        ))}
-      </div>
+      <SavedAttachSheet
+        open={attachOpen}
+        onClose={() => setAttachOpen(false)}
+        onPick={(picked) => handleTypeSelect(picked)}
+      />
 
       {/* Upload hint or text input */}
       {isUploadMode ? (
@@ -261,6 +242,20 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
         </button>
       ) : (
         <div className="flex items-end gap-2">
+          {/* Attach paperclip */}
+          <button
+            type="button"
+            onClick={() => setAttachOpen(true)}
+            className={`flex-shrink-0 w-11 h-11 rounded-full border border-white/5 backdrop-blur-md flex items-center justify-center transition-colors ${
+              attachOpen
+                ? "bg-violet-500/20 text-violet-200"
+                : "bg-gray-900/70 text-gray-300 hover:text-white"
+            }`}
+            title="Прикріпити"
+          >
+            <Paperclip className="w-5 h-5" />
+          </button>
+
           <div className="flex-1 flex items-end gap-2 bg-gray-900/70 border border-white/5 rounded-3xl px-4 py-2 min-h-[44px] focus-within:border-violet-500/40 transition-colors backdrop-blur-md">
             <textarea
               ref={textareaRef}
