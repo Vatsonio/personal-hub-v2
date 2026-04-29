@@ -165,7 +165,7 @@ export default function SavedFeed({
           onClose={() => setLightboxIndex(null)}
         />
       )}
-      <div ref={rootRef} className="flex flex-col px-2 pb-4">
+      <div ref={rootRef} className="flex flex-col px-2 pt-1 pb-6">
         {rendered}
         <div ref={bottomRef} />
       </div>
@@ -176,7 +176,7 @@ export default function SavedFeed({
         className={`jump-btn fixed right-4 z-40 w-10 h-10 rounded-full bg-gray-900/85 backdrop-blur-md border border-white/5 flex items-center justify-center text-gray-300 shadow-lg ${
           showJump ? "jump-btn-shown" : "jump-btn-hidden"
         }`}
-        style={{ bottom: "calc(5.5rem + env(safe-area-inset-bottom))" }}
+        style={{ bottom: "calc(8.5rem + env(safe-area-inset-bottom))" }}
         title="Вниз"
       >
         <ChevronDown className="w-4 h-4" />

@@ -30,7 +30,9 @@ export default function SavedHeader({
 }: Props) {
   const { t } = useLocale();
   const showStorage = storageLimit > 0;
-  const pct = showStorage ? Math.min(100, Math.round((storageUsed / storageLimit) * 100)) : 0;
+  const subtitle = showStorage
+    ? `${t("saved.count", totalCount)} · ${fmtBytes(storageUsed)} / ${fmtBytes(storageLimit)}`
+    : t("saved.count", totalCount);
 
   return (
     <div className="px-3 pt-2 pb-2">
@@ -55,9 +57,7 @@ export default function SavedHeader({
           <div className="text-[14px] text-white font-medium leading-none truncate">
             {t("saved.title")}
           </div>
-          <div className="text-[10.5px] text-gray-400 leading-none mt-0.5 truncate">
-            {t("saved.count", totalCount)}
-          </div>
+          <div className="text-[10.5px] text-gray-400 leading-none mt-0.5 truncate">{subtitle}</div>
         </div>
 
         {/* Search */}
@@ -80,21 +80,6 @@ export default function SavedHeader({
           <MoreHorizontal className="w-4 h-4 text-gray-300" />
         </button>
       </div>
-
-      {/* Storage thin progress strip */}
-      {showStorage && (
-        <div className="mt-2 flex items-center gap-2 px-1">
-          <div className="flex-1 h-0.5 bg-gray-800/70 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-violet-500/80 rounded-full transition-all"
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-          <span className="text-[10px] text-gray-500 flex-shrink-0">
-            {fmtBytes(storageUsed)} / {fmtBytes(storageLimit)}
-          </span>
-        </div>
-      )}
     </div>
   );
 }

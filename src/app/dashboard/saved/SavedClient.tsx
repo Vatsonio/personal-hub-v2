@@ -242,11 +242,11 @@ export default function SavedClient({
     <>
       <div
         className="flex flex-col overflow-hidden px-0 pt-0 pb-1
-        sm:px-0 sm:pt-0 sm:pb-0 sm:h-[calc(100svh-4rem-env(safe-area-inset-top)-1rem-3.5rem-env(safe-area-inset-bottom))]
+        sm:px-0 sm:pt-0 sm:pb-0 sm:h-[calc(100svh-env(safe-area-inset-top)-3.5rem-env(safe-area-inset-bottom))]
         fixed sm:static left-0 right-0
         sm:top-auto sm:bottom-auto sm:left-auto sm:right-auto"
         style={{
-          top: "calc(4rem + env(safe-area-inset-top))",
+          top: "env(safe-area-inset-top)",
           bottom: bottomNavVisible
             ? "calc(3.5rem + env(safe-area-inset-bottom))"
             : "env(safe-area-inset-bottom)"

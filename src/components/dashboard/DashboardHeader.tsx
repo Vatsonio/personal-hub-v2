@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Zap } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import WeatherWidget from "./WeatherWidget";
 import UserNav from "./UserNav";
 import type { Session } from "next-auth";
@@ -24,6 +25,7 @@ export default function DashboardHeader({
   session: Session;
   savedCount: number;
 }) {
+  const pathname = usePathname();
   const [time, setTime] = useState("");
   const [date, setDate] = useState("");
 
@@ -64,6 +66,9 @@ export default function DashboardHeader({
       window.removeEventListener("storage", onSettingsChanged);
     };
   }, []);
+
+  // Saved page has its own floating SavedHeader pill — hide global header there.
+  if (pathname?.startsWith("/dashboard/saved")) return null;
 
   return (
     <header
