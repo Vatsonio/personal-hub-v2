@@ -11,6 +11,7 @@ import SavedPinnedView from "./components/SavedPinnedView";
 import SavedContextMenu, { type CtxState, type CtxActionId } from "./components/SavedContextMenu";
 import SavedSelectionHeader from "./components/SavedSelectionHeader";
 import SavedSelectionActionBar from "./components/SavedSelectionActionBar";
+import SavedSearchOverlay from "./components/SavedSearchOverlay";
 import { useSavedItems } from "./hooks/useSavedItems";
 import { useSavedSearch } from "./hooks/useSavedSearch";
 import type { SavedItem } from "@/types/domain";
@@ -105,8 +106,7 @@ export default function SavedClient({
     initialItems,
     userId
   );
-  const { filtered, rawSearch, setRawSearch, filters, setFilters, ftsLoading } =
-    useSavedSearch(items);
+  const { filtered, filters, setFilters, ftsLoading } = useSavedSearch(items);
   const [replyTo, setReplyTo] = useState<SavedItem | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -114,6 +114,7 @@ export default function SavedClient({
   const [ctx, setCtx] = useState<CtxState>(null);
   const [expandedMdIds, setExpandedMdIds] = useState<Set<string>>(new Set());
   const [reminderPickerId, setReminderPickerId] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const handleCopy = useCallback(async (item: SavedItem) => {
     const text = item.content_type === "link" ? item.source_url : item.content;
@@ -263,9 +264,7 @@ export default function SavedClient({
               <SavedHeader
                 pinnedCount={pinned.length}
                 totalCount={items.length}
-                onSearch={() => {
-                  /* TODO commit 7: open search overlay */
-                }}
+                onSearch={() => setSearchOpen(true)}
                 storageUsed={storageUsed}
                 storageLimit={storageLimit}
               />
@@ -367,16 +366,19 @@ export default function SavedClient({
 
       <SavedContextMenu ctx={ctx} onClose={() => setCtx(null)} onAction={handleCtxAction} />
 
-      {/* search/loading indicator (kept for ftsLoading hint) */}
+      <SavedSearchOverlay
+        open={searchOpen}
+        items={items}
+        onClose={() => setSearchOpen(false)}
+        onJump={jumpToItem}
+      />
+
       {ftsLoading && (
         <div className="fixed bottom-20 right-4 z-40 text-xs text-gray-500 bg-gray-900/80 border border-white/5 rounded-full px-2 py-1 backdrop-blur-md">
           <Loader2 className="w-3 h-3 animate-spin inline mr-1" />
           пошук…
         </div>
       )}
-
-      {/* Hidden — keeps rawSearch wired for future overlay */}
-      <input type="hidden" value={rawSearch} onChange={() => setRawSearch(rawSearch)} readOnly />
     </>
   );
 }
