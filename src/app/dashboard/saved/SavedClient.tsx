@@ -12,6 +12,7 @@ import SavedContextMenu, { type CtxState, type CtxActionId } from "./components/
 import SavedSelectionHeader from "./components/SavedSelectionHeader";
 import SavedSelectionActionBar from "./components/SavedSelectionActionBar";
 import SavedSearchOverlay from "./components/SavedSearchOverlay";
+import SavedConfirmDialog from "./components/SavedConfirmDialog";
 import { useSavedItems } from "./hooks/useSavedItems";
 import { useSavedSearch } from "./hooks/useSavedSearch";
 import type { SavedItem } from "@/types/domain";
@@ -116,6 +117,11 @@ export default function SavedClient({
   const [reminderPickerId, setReminderPickerId] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
 
+  // Delete confirmation state — single id, "bulk", or null
+  const [confirmDelete, setConfirmDelete] = useState<
+    { kind: "single"; id: string } | { kind: "bulk"; count: number } | null
+  >(null);
+
   const handleCopy = useCallback(async (item: SavedItem) => {
     const text = item.content_type === "link" ? item.source_url : item.content;
     if (!text) return;
@@ -181,7 +187,7 @@ export default function SavedClient({
           handleExportJson(item);
           break;
         case "delete":
-          deleteItem(item.id).then(() => refreshStorage());
+          setConfirmDelete({ kind: "single", id: item.id });
           break;
         case "select":
           setSelectedIds(new Set([item.id]));
@@ -231,10 +237,27 @@ export default function SavedClient({
     setSelectedIds(new Set());
   }, []);
 
-  const handleBulkDelete = useCallback(async () => {
+  const requestBulkDelete = useCallback(() => {
+    if (selectedIds.size === 0) return;
+    setConfirmDelete({ kind: "bulk", count: selectedIds.size });
+  }, [selectedIds.size]);
+
+  const performBulkDelete = useCallback(async () => {
     await bulkDelete(Array.from(selectedIds));
     clearSelection();
-  }, [bulkDelete, selectedIds, clearSelection]);
+    refreshStorage();
+  }, [bulkDelete, selectedIds, clearSelection, refreshStorage]);
+
+  const performConfirmedDelete = useCallback(async () => {
+    if (!confirmDelete) return;
+    if (confirmDelete.kind === "single") {
+      await deleteItem(confirmDelete.id);
+      refreshStorage();
+    } else {
+      await performBulkDelete();
+    }
+    setConfirmDelete(null);
+  }, [confirmDelete, deleteItem, refreshStorage, performBulkDelete]);
 
   const hasSelection = selectedIds.size > 0;
 
@@ -257,7 +280,7 @@ export default function SavedClient({
             <SavedSelectionHeader
               count={selectedIds.size}
               onCancel={clearSelection}
-              onConfirm={handleBulkDelete}
+              onConfirm={requestBulkDelete}
             />
           ) : (
             <>
@@ -308,10 +331,7 @@ export default function SavedClient({
             onUnpin={(id) => updateItem(id, { is_pinned: false })}
             onFavorite={(id) => updateItem(id, { is_favorite: true })}
             onUnfavorite={(id) => updateItem(id, { is_favorite: false })}
-            onDelete={async (id) => {
-              await deleteItem(id);
-              refreshStorage();
-            }}
+            onDelete={(id) => setConfirmDelete({ kind: "single", id })}
             onReply={setReplyTo}
             onUpdateMeta={(id, meta) =>
               updateItem(id, {
@@ -332,7 +352,7 @@ export default function SavedClient({
           <div className={`flex-shrink-0 ${isGlass ? "bg-transparent" : ""}`}>
             <SavedSelectionActionBar
               count={selectedIds.size}
-              onDelete={handleBulkDelete}
+              onDelete={requestBulkDelete}
               onApplyTags={async (tags) => {
                 await bulkTag(Array.from(selectedIds), tags);
                 clearSelection();
@@ -371,6 +391,23 @@ export default function SavedClient({
         items={items}
         onClose={() => setSearchOpen(false)}
         onJump={jumpToItem}
+      />
+
+      <SavedConfirmDialog
+        open={confirmDelete !== null}
+        title={
+          confirmDelete?.kind === "bulk"
+            ? `Видалити ${confirmDelete.count} ${
+                confirmDelete.count === 1 ? "повідомлення" : "повідомлень"
+              }?`
+            : "Видалити повідомлення?"
+        }
+        body="Цю дію не можна скасувати."
+        danger
+        confirmLabel="Видалити"
+        cancelLabel="Скасувати"
+        onConfirm={performConfirmedDelete}
+        onCancel={() => setConfirmDelete(null)}
       />
 
       {ftsLoading && (

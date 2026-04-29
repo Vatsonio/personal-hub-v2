@@ -3,14 +3,16 @@
 import { Image as ImageIcon, Camera, FileUp, Link2, Mic, X } from "lucide-react";
 import type { SavedContentType } from "@/types/domain";
 
+export type AttachPickId = SavedContentType | "camera";
+
 type Props = {
   open: boolean;
   onClose: () => void;
-  onPick: (id: SavedContentType) => void;
+  onPick: (id: AttachPickId) => void;
 };
 
 const OPTIONS: {
-  id: SavedContentType;
+  id: AttachPickId;
   Icon: React.ElementType;
   label: string;
   tint: string;
@@ -24,7 +26,7 @@ const OPTIONS: {
     stroke: "text-violet-300"
   },
   {
-    id: "image",
+    id: "camera",
     Icon: Camera,
     label: "Камера",
     tint: "from-blue-500/30 to-blue-500/10",

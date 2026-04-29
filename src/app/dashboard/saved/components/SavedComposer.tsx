@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, X, FileUp, Loader2, AlertTriangle, Paperclip, Mic } from "lucide-react";
 import type { SavedItem, SavedContentType, CreateSavedItemInput } from "@/types/domain";
-import SavedAttachSheet from "./SavedAttachSheet";
+import SavedAttachSheet, { type AttachPickId } from "./SavedAttachSheet";
 
 type Props = {
   onAdd: (input: CreateSavedItemInput) => void;
@@ -38,6 +38,7 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [attachOpen, setAttachOpen] = useState(false);
+  const [captureMode, setCaptureMode] = useState<"environment" | null>(null);
 
   // Auto-dismiss upload errors after 4 seconds
   useEffect(() => {
@@ -65,10 +66,23 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
   // When user switches to file/image type, trigger the file picker immediately
   function handleTypeSelect(t: SavedContentType) {
     setType(t);
+    setCaptureMode(null);
     if (UPLOAD_TYPES.includes(t)) {
       // small timeout so state settles before input.accept is updated
       setTimeout(() => fileInputRef.current?.click(), 50);
     }
+  }
+
+  // Attach-sheet pick — handles camera vs other types
+  function handleAttachPick(picked: AttachPickId) {
+    if (picked === "camera") {
+      setType("image");
+      setCaptureMode("environment");
+      // Open camera directly
+      setTimeout(() => fileInputRef.current?.click(), 50);
+      return;
+    }
+    handleTypeSelect(picked);
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -117,9 +131,11 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
       onAdd(input);
       onUploadDone?.();
       setType("text");
+      setCaptureMode(null);
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Upload failed");
       setType("text");
+      setCaptureMode(null);
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -172,6 +188,7 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
         type="file"
         className="hidden"
         accept={type === "image" ? "image/*" : "*/*"}
+        {...(captureMode ? { capture: captureMode } : {})}
         onChange={handleFileChange}
       />
 
@@ -219,7 +236,7 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
       <SavedAttachSheet
         open={attachOpen}
         onClose={() => setAttachOpen(false)}
-        onPick={(picked) => handleTypeSelect(picked)}
+        onPick={(picked) => handleAttachPick(picked)}
       />
 
       {/* Upload hint or text input */}
