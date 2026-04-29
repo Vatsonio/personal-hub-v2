@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { BookMarked, Trash2, Tag, X, Check, AlertTriangle, Loader2 } from "lucide-react";
-import { useLocale } from "@/components/LocaleProvider";
+import { Trash2, Tag, X, Check, AlertTriangle, Loader2 } from "lucide-react";
 import SavedFeed from "./components/SavedFeed";
 import SavedComposer from "./components/SavedComposer";
 import SavedFilters from "./components/SavedFilters";
-import SavedSearchBar from "./components/SavedSearchBar";
+import SavedHeader from "./components/SavedHeader";
+import SavedPinnedBar from "./components/SavedPinnedBar";
+import SavedPinnedView from "./components/SavedPinnedView";
 import { useSavedItems } from "./hooks/useSavedItems";
 import { useSavedSearch } from "./hooks/useSavedSearch";
 import type { SavedItem } from "@/types/domain";
@@ -20,12 +21,12 @@ type Props = {
   storageLimit?: number;
 };
 
-function fmtBytes(n: number) {
-  if (!n || n <= 0) return "0 B";
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(n) / Math.log(k));
-  return `${(n / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+function jumpToItemEl(id: string) {
+  const target = document.querySelector<HTMLElement>(`[data-bubble-id="${id}"]`);
+  if (!target) return;
+  target.scrollIntoView({ behavior: "smooth", block: "center" });
+  target.classList.add("bubble-flash");
+  setTimeout(() => target.classList.remove("bubble-flash"), 1400);
 }
 
 export default function SavedClient({
@@ -36,7 +37,6 @@ export default function SavedClient({
   storageLimit: initialStorageLimit = 0
 }: Props) {
   const [userId] = useState(initialUserId);
-  const { t } = useLocale();
   const [isGlass, setIsGlass] = useState(false);
   useEffect(() => {
     const check = () => setIsGlass(document.body.classList.contains("theme-glass"));
@@ -109,10 +109,38 @@ export default function SavedClient({
   const [tagInput, setTagInput] = useState("");
   const [tagging, setTagging] = useState(false);
 
+  // Pinned management
+  const pinned = items
+    .filter((i) => i.is_pinned)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const [pinnedViewOpen, setPinnedViewOpen] = useState(false);
+  const [pinnedCursor, setPinnedCursor] = useState(0);
+  const currentPinned = pinned[pinnedCursor % Math.max(pinned.length, 1)] ?? pinned[0];
+
+  const jumpToPinned = useCallback(
+    (id: string) => {
+      jumpToItemEl(id);
+      setPinnedCursor((c) => (pinned.length > 0 ? (c + 1) % pinned.length : 0));
+    },
+    [pinned.length]
+  );
+
+  const jumpToItem = useCallback((id: string) => {
+    jumpToItemEl(id);
+  }, []);
+
+  const handleUnpinAll = useCallback(async () => {
+    for (const p of pinned) {
+      await updateItem(p.id, { is_pinned: false });
+    }
+    setPinnedViewOpen(false);
+  }, [pinned, updateItem]);
+
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }, []);
@@ -143,7 +171,7 @@ export default function SavedClient({
   return (
     <>
       <div
-        className="flex flex-col overflow-hidden px-4 pt-2 pb-1
+        className="flex flex-col overflow-hidden px-0 pt-0 pb-1
         sm:px-0 sm:pt-0 sm:pb-0 sm:h-[calc(100svh-4rem-env(safe-area-inset-top)-1rem-3.5rem-env(safe-area-inset-bottom))]
         fixed sm:static left-0 right-0
         sm:top-auto sm:bottom-auto sm:left-auto sm:right-auto"
@@ -154,58 +182,30 @@ export default function SavedClient({
             : "env(safe-area-inset-bottom)"
         }}
       >
-        <div
-          className={`flex-shrink-0 pb-2 ${isGlass ? "bg-transparent" : "bg-gray-950/95 backdrop-blur-sm"}`}
-        >
-          {/* Header — hidden on mobile (bottom nav handles navigation) */}
-          <div className="hidden sm:flex items-center gap-3 mb-3 flex-shrink-0">
-            <div className="w-9 h-9 bg-gradient-to-br from-violet-500 to-blue-500 rounded-xl flex items-center justify-center shadow-md shadow-violet-500/20">
-              <BookMarked className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-white font-semibold text-lg leading-none">{t("saved.title")}</h1>
-              <p className="text-gray-500 text-xs mt-0.5">{t("saved.count", items.length)}</p>
-            </div>
-            {storageLimit > 0 && (
-              <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                <span className="text-xs text-gray-500">
-                  {fmtBytes(storageUsed)} / {fmtBytes(storageLimit)}
-                </span>
-                <div className="w-20 h-1 bg-gray-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-violet-500 rounded-full transition-all"
-                    style={{
-                      width: `${Math.min(100, Math.round((storageUsed / storageLimit) * 100))}%`
-                    }}
-                  />
-                </div>
-              </div>
-            )}
+        <div className={`flex-shrink-0 ${isGlass ? "bg-transparent" : ""}`}>
+          <SavedHeader
+            pinnedCount={pinned.length}
+            totalCount={items.length}
+            onSearch={() => {
+              /* TODO commit 7: open search overlay */
+            }}
+            storageUsed={storageUsed}
+            storageLimit={storageLimit}
+          />
+          <SavedPinnedBar
+            item={currentPinned}
+            count={pinned.length}
+            onJump={jumpToPinned}
+            onOpenList={() => setPinnedViewOpen(true)}
+          />
+
+          <div className="px-3">
+            <SavedFilters filters={filters} onChange={setFilters} items={items} />
           </div>
-
-          {/* Mobile storage bar */}
-          {storageLimit > 0 && (
-            <div className="sm:hidden flex items-center gap-2 mb-2 flex-shrink-0">
-              <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-violet-500/70 rounded-full transition-all"
-                  style={{
-                    width: `${Math.min(100, Math.round((storageUsed / storageLimit) * 100))}%`
-                  }}
-                />
-              </div>
-              <span className="text-xs text-gray-500 flex-shrink-0">
-                {fmtBytes(storageUsed)} / {fmtBytes(storageLimit)}
-              </span>
-            </div>
-          )}
-
-          <SavedSearchBar value={rawSearch} onChange={setRawSearch} loading={ftsLoading} />
-          <SavedFilters filters={filters} onChange={setFilters} items={items} />
 
           {/* Bulk action bar — slides in when items are selected */}
           {hasSelection && (
-            <div className="flex-shrink-0 flex items-center gap-2 mt-2 px-3 py-2 bg-gray-900/80 border border-gray-700 rounded-xl backdrop-blur-sm animate-fade-in">
+            <div className="flex-shrink-0 flex items-center gap-2 mt-2 mx-3 px-3 py-2 bg-gray-900/80 border border-gray-700 rounded-xl backdrop-blur-sm">
               <span className="text-xs text-gray-400 font-medium mr-1">
                 {selectedIds.size} вибрано
               </span>
@@ -260,17 +260,17 @@ export default function SavedClient({
             </div>
           )}
 
-          {/* DB error banner — shows if migration wasn't applied or Supabase is unreachable */}
+          {/* DB error banner */}
           {dbError && (
-            <div className="flex-shrink-0 flex items-center gap-2 mt-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-300">
+            <div className="flex-shrink-0 flex items-center gap-2 mt-2 mx-3 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-300">
               <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
               <span>Помилка з&apos;єднання з базою даних. Дані можуть бути застарілими.</span>
             </div>
           )}
 
-          {/* Connecting shimmer — shown on cold cloud start */}
+          {/* Connecting shimmer */}
           {connecting && (
-            <div className="flex-shrink-0 flex items-center gap-2 mt-2 px-3 py-1.5 bg-gray-800/60 border border-gray-700/50 rounded-xl text-xs text-gray-500">
+            <div className="flex-shrink-0 flex items-center gap-2 mt-2 mx-3 px-3 py-1.5 bg-gray-800/60 border border-gray-700/50 rounded-xl text-xs text-gray-500">
               <Loader2 className="w-3 h-3 animate-spin" />
               <span>Підключення до хмари…</span>
             </div>
@@ -304,9 +304,7 @@ export default function SavedClient({
 
         {/* Composer — hidden during bulk selection */}
         {!hasSelection && (
-          <div
-            className={`flex-shrink-0 pt-1 ${isGlass ? "bg-transparent" : "bg-gray-950/95 backdrop-blur-sm"}`}
-          >
+          <div className={`flex-shrink-0 pt-1 px-3 ${isGlass ? "bg-transparent" : ""}`}>
             <SavedComposer
               onAdd={addItem}
               onUploadDone={refreshStorage}
@@ -316,6 +314,30 @@ export default function SavedClient({
           </div>
         )}
       </div>
+
+      <SavedPinnedView
+        open={pinnedViewOpen}
+        items={pinned}
+        onClose={() => setPinnedViewOpen(false)}
+        onJump={jumpToItem}
+        onUnpinAll={handleUnpinAll}
+        onUpdateMeta={(id, meta) =>
+          updateItem(id, {
+            metadata: { ...(items.find((i) => i.id === id)?.metadata ?? {}), ...meta }
+          })
+        }
+      />
+
+      {/* search/loading indicator (kept for ftsLoading hint) */}
+      {ftsLoading && (
+        <div className="fixed bottom-20 right-4 z-40 text-xs text-gray-500 bg-gray-900/80 border border-white/5 rounded-full px-2 py-1 backdrop-blur-md">
+          <Loader2 className="w-3 h-3 animate-spin inline mr-1" />
+          пошук…
+        </div>
+      )}
+
+      {/* Hidden — keeps rawSearch wired for future overlay */}
+      <input type="hidden" value={rawSearch} onChange={() => setRawSearch(rawSearch)} readOnly />
     </>
   );
 }
