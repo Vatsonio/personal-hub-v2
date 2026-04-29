@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Trash2, Tag, X, Check, AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import SavedFeed from "./components/SavedFeed";
 import SavedComposer from "./components/SavedComposer";
 import SavedFilters from "./components/SavedFilters";
@@ -9,6 +9,8 @@ import SavedHeader from "./components/SavedHeader";
 import SavedPinnedBar from "./components/SavedPinnedBar";
 import SavedPinnedView from "./components/SavedPinnedView";
 import SavedContextMenu, { type CtxState, type CtxActionId } from "./components/SavedContextMenu";
+import SavedSelectionHeader from "./components/SavedSelectionHeader";
+import SavedSelectionActionBar from "./components/SavedSelectionActionBar";
 import { useSavedItems } from "./hooks/useSavedItems";
 import { useSavedSearch } from "./hooks/useSavedSearch";
 import type { SavedItem } from "@/types/domain";
@@ -107,8 +109,6 @@ export default function SavedClient({
     useSavedSearch(items);
   const [replyTo, setReplyTo] = useState<SavedItem | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [tagInput, setTagInput] = useState("");
-  const [tagging, setTagging] = useState(false);
 
   // Context menu state
   const [ctx, setCtx] = useState<CtxState>(null);
@@ -228,24 +228,12 @@ export default function SavedClient({
 
   const clearSelection = useCallback(() => {
     setSelectedIds(new Set());
-    setTagging(false);
-    setTagInput("");
   }, []);
 
   const handleBulkDelete = useCallback(async () => {
     await bulkDelete(Array.from(selectedIds));
     clearSelection();
   }, [bulkDelete, selectedIds, clearSelection]);
-
-  const handleBulkTag = useCallback(async () => {
-    const tags = tagInput
-      .split(/[\s,]+/)
-      .map((t) => t.replace(/^#/, "").toLowerCase())
-      .filter(Boolean);
-    if (tags.length === 0) return;
-    await bulkTag(Array.from(selectedIds), tags);
-    clearSelection();
-  }, [bulkTag, selectedIds, tagInput, clearSelection]);
 
   const hasSelection = selectedIds.size > 0;
 
@@ -264,81 +252,33 @@ export default function SavedClient({
         }}
       >
         <div className={`flex-shrink-0 ${isGlass ? "bg-transparent" : ""}`}>
-          <SavedHeader
-            pinnedCount={pinned.length}
-            totalCount={items.length}
-            onSearch={() => {
-              /* TODO commit 7: open search overlay */
-            }}
-            storageUsed={storageUsed}
-            storageLimit={storageLimit}
-          />
-          <SavedPinnedBar
-            item={currentPinned}
-            count={pinned.length}
-            onJump={jumpToPinned}
-            onOpenList={() => setPinnedViewOpen(true)}
-          />
-
-          <div className="px-3">
-            <SavedFilters filters={filters} onChange={setFilters} items={items} />
-          </div>
-
-          {/* Bulk action bar — slides in when items are selected */}
-          {hasSelection && (
-            <div className="flex-shrink-0 flex items-center gap-2 mt-2 mx-3 px-3 py-2 bg-gray-900/80 border border-gray-700 rounded-xl backdrop-blur-sm">
-              <span className="text-xs text-gray-400 font-medium mr-1">
-                {selectedIds.size} вибрано
-              </span>
-
-              {tagging ? (
-                <>
-                  <input
-                    autoFocus
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleBulkTag()}
-                    placeholder="#тег або кілька через пробіл"
-                    className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-violet-500/60"
-                  />
-                  <button
-                    onClick={handleBulkTag}
-                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-violet-500/20 text-violet-300 text-xs hover:bg-violet-500/30 transition-all"
-                  >
-                    <Check className="w-3 h-3" /> Застосувати
-                  </button>
-                  <button
-                    onClick={() => setTagging(false)}
-                    className="text-gray-600 hover:text-gray-400"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={() => setTagging(true)}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-500/15 text-blue-300 text-xs hover:bg-blue-500/25 transition-all border border-blue-500/20"
-                  >
-                    <Tag className="w-3 h-3" /> Теги
-                  </button>
-                  <button
-                    onClick={handleBulkDelete}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-500/15 text-red-300 text-xs hover:bg-red-500/25 transition-all border border-red-500/20"
-                  >
-                    <Trash2 className="w-3 h-3" /> Видалити
-                  </button>
-                </>
-              )}
-
-              <button
-                onClick={clearSelection}
-                className="ml-auto text-gray-600 hover:text-gray-400 transition-colors"
-                title="Скасувати"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+          {hasSelection ? (
+            <SavedSelectionHeader
+              count={selectedIds.size}
+              onCancel={clearSelection}
+              onConfirm={handleBulkDelete}
+            />
+          ) : (
+            <>
+              <SavedHeader
+                pinnedCount={pinned.length}
+                totalCount={items.length}
+                onSearch={() => {
+                  /* TODO commit 7: open search overlay */
+                }}
+                storageUsed={storageUsed}
+                storageLimit={storageLimit}
+              />
+              <SavedPinnedBar
+                item={currentPinned}
+                count={pinned.length}
+                onJump={jumpToPinned}
+                onOpenList={() => setPinnedViewOpen(true)}
+              />
+              <div className="px-3">
+                <SavedFilters filters={filters} onChange={setFilters} items={items} />
+              </div>
+            </>
           )}
 
           {/* DB error banner */}
@@ -381,14 +321,26 @@ export default function SavedClient({
             }
             onSetReminder={(id, iso) => updateItem(id, { reminder_at: iso })}
             onOpenMenu={setCtx}
+            selectionMode={hasSelection}
             expandedMdIds={expandedMdIds}
             reminderPickerId={reminderPickerId}
             onCloseReminderPicker={() => setReminderPickerId(null)}
           />
         </div>
 
-        {/* Composer — hidden during bulk selection */}
-        {!hasSelection && (
+        {/* Composer or selection action bar */}
+        {hasSelection ? (
+          <div className={`flex-shrink-0 ${isGlass ? "bg-transparent" : ""}`}>
+            <SavedSelectionActionBar
+              count={selectedIds.size}
+              onDelete={handleBulkDelete}
+              onApplyTags={async (tags) => {
+                await bulkTag(Array.from(selectedIds), tags);
+                clearSelection();
+              }}
+            />
+          </div>
+        ) : (
           <div className={`flex-shrink-0 pt-1 px-3 ${isGlass ? "bg-transparent" : ""}`}>
             <SavedComposer
               onAdd={addItem}
