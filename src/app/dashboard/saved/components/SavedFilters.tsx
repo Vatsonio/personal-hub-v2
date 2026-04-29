@@ -40,6 +40,10 @@ export default function SavedFilters({ filters, onChange, items }: Props) {
     onChange({ ...filters, tags: next });
   }
 
+  const chipBase =
+    "flex items-center gap-1 h-7 px-2.5 rounded-full text-[11.5px] sm:text-xs font-medium transition-all whitespace-nowrap border backdrop-blur-md";
+  const chipIdle = "bg-gray-900/60 text-gray-400 border-white/5 hover:text-gray-200";
+
   return (
     <div className="flex flex-col gap-1.5 flex-shrink-0 mb-1">
       {/* Типи */}
@@ -49,10 +53,10 @@ export default function SavedFilters({ filters, onChange, items }: Props) {
             <button
               key={value}
               onClick={() => toggle("type", value)}
-              className={`flex items-center gap-1 px-2 py-1 sm:px-2.5 rounded-lg text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap ${
+              className={`${chipBase} ${
                 filters.type === value
-                  ? "bg-violet-500/20 text-violet-300 border border-violet-500/40"
-                  : "bg-gray-900/50 text-gray-500 border border-gray-800 hover:text-gray-300 hover:border-gray-700"
+                  ? "bg-violet-500/20 text-violet-200 border-violet-400/30"
+                  : chipIdle
               }`}
             >
               <Icon className="w-3 h-3" />
@@ -62,10 +66,8 @@ export default function SavedFilters({ filters, onChange, items }: Props) {
 
           <button
             onClick={() => toggle("pinned", !filters.pinned)}
-            className={`flex items-center gap-1 px-2 py-1 sm:px-2.5 rounded-lg text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap ${
-              filters.pinned
-                ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
-                : "bg-gray-900/50 text-gray-500 border border-gray-800 hover:text-gray-300"
+            className={`${chipBase} ${
+              filters.pinned ? "bg-amber-500/20 text-amber-200 border-amber-400/30" : chipIdle
             }`}
           >
             <Pin className="w-3 h-3" /> Pinned
@@ -73,10 +75,8 @@ export default function SavedFilters({ filters, onChange, items }: Props) {
 
           <button
             onClick={() => toggle("favorite", !filters.favorite)}
-            className={`flex items-center gap-1 px-2 py-1 sm:px-2.5 rounded-lg text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap ${
-              filters.favorite
-                ? "bg-red-500/20 text-red-300 border border-red-500/40"
-                : "bg-gray-900/50 text-gray-500 border border-gray-800 hover:text-gray-300"
+            className={`${chipBase} ${
+              filters.favorite ? "bg-rose-500/20 text-rose-200 border-rose-400/30" : chipIdle
             }`}
           >
             <Heart className="w-3 h-3" /> Favorite
@@ -92,10 +92,10 @@ export default function SavedFilters({ filters, onChange, items }: Props) {
               <button
                 key={tag}
                 onClick={() => toggleTag(tag)}
-                className={`px-2 py-0.5 rounded-md text-[11px] sm:text-xs transition-all whitespace-nowrap ${
+                className={`h-6 px-2 rounded-full text-[11px] transition-all whitespace-nowrap border ${
                   filters.tags.includes(tag)
-                    ? "bg-blue-500/20 text-blue-300 border border-blue-500/40"
-                    : "bg-gray-900/50 text-gray-600 border border-gray-800 hover:text-gray-400"
+                    ? "bg-blue-500/20 text-blue-200 border-blue-400/30"
+                    : "bg-gray-900/50 text-gray-500 border-white/5 hover:text-gray-300"
                 }`}
               >
                 #{tag}

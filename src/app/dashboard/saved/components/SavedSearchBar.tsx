@@ -6,18 +6,18 @@ type Props = { value: string; onChange: (v: string) => void; loading?: boolean }
 
 export default function SavedSearchBar({ value, onChange, loading }: Props) {
   return (
-    <div className="flex items-center gap-2 flex-shrink-0 mb-2 bg-gray-900/60 border border-gray-800 rounded-xl px-3 focus-within:border-violet-500/60 transition-colors">
+    <div className="flex items-center gap-2 flex-shrink-0 mb-2 bg-gray-900/70 border border-white/5 rounded-full px-4 h-10 focus-within:border-violet-500/40 transition-colors backdrop-blur-md">
       {loading ? (
         <Loader2 className="w-4 h-4 text-violet-400 animate-spin flex-shrink-0" />
       ) : (
-        <Search className="w-4 h-4 text-gray-500 flex-shrink-0" />
+        <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
       )}
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Пошук по тексту, URL, тегах…"
-        className="flex-1 bg-transparent py-2.5 text-base sm:text-sm text-white placeholder-gray-500 focus:outline-none"
+        className="flex-1 bg-transparent text-base sm:text-[14px] text-white placeholder-gray-500 focus:outline-none"
       />
       {value && (
         <button

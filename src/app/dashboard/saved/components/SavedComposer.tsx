@@ -171,7 +171,7 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
   const isUploadMode = UPLOAD_TYPES.includes(type);
 
   return (
-    <div className="flex-shrink-0 mt-1 border-t border-gray-800/60 pt-2 sm:pt-3 pb-2">
+    <div className="flex-shrink-0 mt-1 pt-2 sm:pt-3 pb-2">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -222,20 +222,21 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
         </div>
       )}
 
-      {/* Type selector */}
-      <div className="flex gap-1.5 mb-2">
+      {/* Type selector — compact pill row */}
+      <div className="flex gap-1.5 mb-2 overflow-x-auto -mx-1 px-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {TYPES.map(({ value, Icon, label }) => (
           <button
             key={value}
             onClick={() => handleTypeSelect(value)}
             title={label}
-            className={`p-1.5 rounded-lg transition-all ${
+            className={`flex items-center gap-1 h-7 px-2.5 rounded-full text-[11.5px] font-medium border backdrop-blur-md transition-all whitespace-nowrap ${
               type === value
-                ? "bg-violet-500/20 text-violet-300"
-                : "text-gray-600 hover:text-gray-400 hover:bg-gray-800"
+                ? "bg-violet-500/20 text-violet-200 border-violet-400/30"
+                : "bg-gray-900/60 text-gray-400 border-white/5 hover:text-gray-200"
             }`}
           >
-            <Icon className="w-4 h-4" />
+            <Icon className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{label}</span>
           </button>
         ))}
       </div>
@@ -245,7 +246,7 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-gray-700 text-gray-500 hover:border-violet-500/50 hover:text-violet-400 transition-all text-sm disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-3xl border border-dashed border-white/15 bg-gray-900/50 text-gray-500 hover:border-violet-400/40 hover:text-violet-300 transition-all text-sm disabled:opacity-50 backdrop-blur-md"
         >
           {uploading ? (
             <>
@@ -259,29 +260,29 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
           )}
         </button>
       ) : (
-        <div className="flex items-center gap-2 bg-gray-900/60 border border-gray-800 rounded-2xl px-3 py-2 focus-within:border-violet-500/50 transition-colors">
-          <textarea
-            ref={textareaRef}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={
-              type === "link" ? "Вставте посилання…" : "Збережи текст, ідею або нотатку…"
-            }
-            rows={1}
-            className="flex-1 bg-transparent text-base sm:text-sm text-white placeholder-gray-500 resize-none focus:outline-none leading-relaxed min-h-[2.5rem] max-h-40"
-          />
+        <div className="flex items-end gap-2">
+          <div className="flex-1 flex items-end gap-2 bg-gray-900/70 border border-white/5 rounded-3xl px-4 py-2 min-h-[44px] focus-within:border-violet-500/40 transition-colors backdrop-blur-md">
+            <textarea
+              ref={textareaRef}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={type === "link" ? "Вставте посилання…" : "Повідомлення"}
+              rows={1}
+              className="flex-1 bg-transparent text-base sm:text-[14.5px] text-white placeholder-gray-500 resize-none focus:outline-none leading-relaxed min-h-[1.5rem] max-h-40 py-1"
+            />
+          </div>
           <button
             onClick={handleSubmit}
             disabled={!text.trim()}
-            className="flex-shrink-0 w-8 h-8 rounded-xl bg-violet-500 hover:bg-violet-400 disabled:bg-gray-800 disabled:cursor-not-allowed flex items-center justify-center transition-all shadow-md shadow-violet-500/20"
+            className="flex-shrink-0 w-11 h-11 rounded-full bg-violet-500 hover:bg-violet-400 disabled:bg-gray-800 disabled:cursor-not-allowed flex items-center justify-center transition-all shadow-lg shadow-violet-500/20 disabled:shadow-none"
           >
-            <Send className="w-4 h-4 text-white" />
+            <Send className="w-[18px] h-[18px] text-white translate-x-px" />
           </button>
         </div>
       )}
 
-      <p className="text-gray-700 text-xs mt-1.5 pl-1 hidden sm:block">
+      <p className="text-gray-700 text-xs mt-1.5 pl-3 hidden sm:block">
         {isUploadMode
           ? "Файл буде збережено у хмарному сховищі"
           : "Ctrl+Enter — зберегти · #тег — автоматично розпізнається"}
