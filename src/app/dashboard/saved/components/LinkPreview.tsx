@@ -62,38 +62,42 @@ export default function LinkPreview({ url, cached, onFetched }: Props) {
 
   if (loading) {
     return (
-      <div className="mt-2 h-14 rounded-xl bg-gray-800/50 border border-gray-800 animate-pulse" />
+      <div className="mt-1.5 h-16 rounded-xl bg-black/30 border-l-[3px] border-violet-400/70 animate-pulse" />
     );
   }
 
   if (!data || (!data.title && !data.image && !data.description)) return null;
 
   return (
-    <div className="mt-2 flex gap-3 rounded-xl bg-gray-800/50 border border-gray-800 overflow-hidden hover:border-gray-700 transition-colors">
+    <div className="mt-1.5 rounded-xl overflow-hidden bg-black/30 border-l-[3px] border-violet-400/70 hover:bg-black/40 transition-colors">
+      <div className="px-3 pt-2 pb-2">
+        {data.siteName && (
+          <p className="text-[11px] text-violet-300 font-medium leading-tight truncate">
+            {data.siteName}
+          </p>
+        )}
+        {data.title && (
+          <p className="text-[13px] text-white font-semibold leading-snug mt-0.5 line-clamp-2">
+            {data.title}
+          </p>
+        )}
+        {data.description && (
+          <p className="text-[12px] text-gray-400 leading-snug mt-1 line-clamp-3">
+            {data.description}
+          </p>
+        )}
+      </div>
       {data.image && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={data.image}
           alt=""
-          className="w-16 h-16 object-cover flex-shrink-0"
+          className="w-full h-40 object-cover"
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).style.display = "none";
           }}
         />
       )}
-      <div className="flex flex-col justify-center py-2 pr-3 min-w-0">
-        {data.siteName && <p className="text-gray-600 text-xs mb-0.5 truncate">{data.siteName}</p>}
-        {data.title && (
-          <p className="text-gray-200 text-xs font-medium leading-snug line-clamp-2">
-            {data.title}
-          </p>
-        )}
-        {data.description && (
-          <p className="text-gray-500 text-xs mt-0.5 line-clamp-2 leading-relaxed">
-            {data.description}
-          </p>
-        )}
-      </div>
     </div>
   );
 }

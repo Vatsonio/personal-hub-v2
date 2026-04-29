@@ -84,13 +84,11 @@ export default function SavedFeed({
           ref={(el) => {
             if (el) dateRefs.current.set(dateStr, el);
           }}
-          className="flex items-center gap-3 my-4"
+          className="flex justify-center my-3"
         >
-          <div className="flex-1 h-px bg-gray-800" />
-          <span className="text-xs text-gray-600 font-medium px-2 py-0.5 bg-gray-900 rounded-full border border-gray-800">
+          <span className="text-[11.5px] text-gray-200/90 font-medium px-3 py-1 rounded-full bg-gray-900/80 border border-white/5 backdrop-blur-md">
             {formatDate(item.created_at)}
           </span>
-          <div className="flex-1 h-px bg-gray-800" />
         </div>
       );
     }
