@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, X, FileUp, Loader2, AlertTriangle, Paperclip } from "lucide-react";
+import { Send, X, FileUp, Loader2, AlertTriangle, Paperclip, Mic } from "lucide-react";
 import type { SavedItem, SavedContentType, CreateSavedItemInput } from "@/types/domain";
 import SavedAttachSheet from "./SavedAttachSheet";
 
@@ -267,12 +267,28 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
               className="flex-1 bg-transparent text-base sm:text-[14.5px] text-white placeholder-gray-500 resize-none focus:outline-none leading-relaxed min-h-[1.5rem] max-h-40 py-1"
             />
           </div>
+          {/* Mic ↔ Send toggle */}
           <button
-            onClick={handleSubmit}
-            disabled={!text.trim()}
-            className="flex-shrink-0 w-11 h-11 rounded-full bg-violet-500 hover:bg-violet-400 disabled:bg-gray-800 disabled:cursor-not-allowed flex items-center justify-center transition-all shadow-lg shadow-violet-500/20 disabled:shadow-none"
+            onClick={() => {
+              if (text.trim()) handleSubmit();
+            }}
+            className={`flex-shrink-0 relative w-11 h-11 rounded-full border flex items-center justify-center transition-colors ${
+              text.trim()
+                ? "bg-violet-500 hover:bg-violet-400 border-transparent shadow-lg shadow-violet-500/20"
+                : "bg-gray-900/70 border-white/5 text-gray-300 backdrop-blur-md"
+            }`}
+            title={text.trim() ? "Надіслати" : "Голосове"}
           >
-            <Send className="w-[18px] h-[18px] text-white translate-x-px" />
+            <Mic
+              className={`w-5 h-5 absolute transition-all duration-200 ${
+                text.trim() ? "opacity-0 scale-75 rotate-45" : "opacity-100 scale-100 rotate-0"
+              }`}
+            />
+            <Send
+              className={`w-[18px] h-[18px] absolute text-white transition-all duration-200 translate-x-[1px] ${
+                text.trim() ? "opacity-100 scale-100 rotate-0" : "opacity-0 scale-75 -rotate-45"
+              }`}
+            />
           </button>
         </div>
       )}

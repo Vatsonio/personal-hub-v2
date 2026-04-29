@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import SavedBubble from "./SavedBubble";
 import ImageLightbox from "./ImageLightbox";
 import { useLocale } from "@/components/LocaleProvider";
@@ -49,7 +50,30 @@ export default function SavedFeed({
   const dateRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const prevCountRef = useRef(items.length);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [showJump, setShowJump] = useState(false);
   const { formatDate, t } = useLocale();
+
+  // Watch the scroll container (parent of feed root) to toggle jump-to-bottom
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const root = rootRef.current;
+    const scroller = root?.parentElement;
+    if (!scroller) return;
+    const onScroll = () => {
+      const distFromBottom = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
+      setShowJump(distFromBottom > 200);
+    };
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => scroller.removeEventListener("scroll", onScroll);
+  }, []);
+
+  function scrollToBottom() {
+    const root = rootRef.current;
+    const scroller = root?.parentElement;
+    if (!scroller) return;
+    scroller.scrollTo({ top: scroller.scrollHeight, behavior: "smooth" });
+  }
 
   const imageItems = items
     .filter((i) => i.content_type === "image" && i.source_url)
@@ -141,10 +165,22 @@ export default function SavedFeed({
           onClose={() => setLightboxIndex(null)}
         />
       )}
-      <div className="flex flex-col px-2 pb-4">
+      <div ref={rootRef} className="flex flex-col px-2 pb-4">
         {rendered}
         <div ref={bottomRef} />
       </div>
+      <button
+        type="button"
+        onClick={scrollToBottom}
+        aria-hidden={!showJump}
+        className={`jump-btn fixed right-4 z-40 w-10 h-10 rounded-full bg-gray-900/85 backdrop-blur-md border border-white/5 flex items-center justify-center text-gray-300 shadow-lg ${
+          showJump ? "jump-btn-shown" : "jump-btn-hidden"
+        }`}
+        style={{ bottom: "calc(5.5rem + env(safe-area-inset-bottom))" }}
+        title="Вниз"
+      >
+        <ChevronDown className="w-4 h-4" />
+      </button>
     </>
   );
 }
