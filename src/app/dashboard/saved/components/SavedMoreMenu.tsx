@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useState } from "react";
 import { ArrowDownAZ, ArrowUpAZ, Download, BellOff } from "lucide-react";
+import { useLocale } from "@/components/LocaleProvider";
 
 export type MoreActionId = "sort_asc" | "sort_desc" | "export_all" | "clear_reminders";
 
@@ -14,6 +15,7 @@ type Props = {
 };
 
 export default function SavedMoreMenu({ open, anchor, sortDir, onClose, onAction }: Props) {
+  const { t } = useLocale();
   const [pos, setPos] = useState({ left: 0, top: 0 });
 
   useLayoutEffect(() => {
@@ -45,10 +47,10 @@ export default function SavedMoreMenu({ open, anchor, sortDir, onClose, onAction
 
   const rows: { id: MoreActionId; label: string; Icon: React.ElementType }[] = [
     sortDir === "desc"
-      ? { id: "sort_asc", label: "Сортувати: спочатку старі", Icon: ArrowDownAZ }
-      : { id: "sort_desc", label: "Сортувати: спочатку нові", Icon: ArrowUpAZ },
-    { id: "export_all", label: "Експорт усього (.json)", Icon: Download },
-    { id: "clear_reminders", label: "Очистити всі нагадування", Icon: BellOff }
+      ? { id: "sort_asc", label: t("saved.menu.sort_asc"), Icon: ArrowDownAZ }
+      : { id: "sort_desc", label: t("saved.menu.sort_desc"), Icon: ArrowUpAZ },
+    { id: "export_all", label: t("saved.menu.export_all"), Icon: Download },
+    { id: "clear_reminders", label: t("saved.menu.clear_reminders"), Icon: BellOff }
   ];
 
   return (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, X, Bookmark, Lock } from "lucide-react";
+import { Search, X, Bookmark, Tag, Check } from "lucide-react";
 import type { SavedItem } from "@/types/domain";
 
 type Props = {
@@ -29,6 +29,8 @@ function typeLabel(it: SavedItem): string {
 export default function SavedSearchOverlay({ open, items, onClose, onJump }: Props) {
   const [q, setQ] = useState("");
   const [listMode, setListMode] = useState(false);
+  const [tagPanelOpen, setTagPanelOpen] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -38,13 +40,30 @@ export default function SavedSearchOverlay({ open, items, onClose, onJump }: Pro
     } else {
       setQ("");
       setListMode(false);
+      setTagPanelOpen(false);
+      setSelectedTags([]);
     }
   }, [open]);
 
+  // All unique tags across items
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    for (const it of items) for (const tg of it.tags) set.add(tg);
+    return Array.from(set).sort();
+  }, [items]);
+
+  function toggleTag(tag: string) {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  }
+
   const matches = useMemo(() => {
     const query = q.trim().toLowerCase();
-    if (!query) return [];
     return items.filter((it) => {
+      // Tag filter — items with ANY selected tag
+      if (selectedTags.length > 0 && !selectedTags.some((t) => it.tags.includes(t))) return false;
+      if (!query) return selectedTags.length > 0;
       const meta = it.metadata as Record<string, string> | undefined;
       const hay = [
         it.content,
@@ -60,9 +79,9 @@ export default function SavedSearchOverlay({ open, items, onClose, onJump }: Pro
         .toLowerCase();
       return hay.includes(query);
     });
-  }, [q, items]);
+  }, [q, items, selectedTags]);
 
-  const showList = listMode || q.trim().length > 0;
+  const showList = listMode || q.trim().length > 0 || selectedTags.length > 0;
 
   return (
     <div
@@ -99,17 +118,64 @@ export default function SavedSearchOverlay({ open, items, onClose, onJump }: Pro
               <X className="w-4 h-4" />
             </button>
           </div>
-          <div className="mt-2 flex">
+          <div className="mt-2 flex flex-wrap gap-2">
             <button
               type="button"
-              className="flex items-center gap-1.5 h-9 px-3 rounded-full bg-gray-900/85 backdrop-blur-md border border-white/5 text-[13px]"
+              onClick={() => setTagPanelOpen((v) => !v)}
+              className={`flex items-center gap-1.5 h-9 px-3 rounded-full backdrop-blur-md border text-[13px] transition-colors ${
+                tagPanelOpen || selectedTags.length > 0
+                  ? "bg-violet-500/20 border-violet-400/30 text-violet-200"
+                  : "bg-gray-900/85 border-white/5 text-gray-200"
+              }`}
             >
-              <Lock className="w-3.5 h-3.5 text-rose-400" />
-              <span className="text-gray-200 font-medium">Додати мітки</span>
-              <span className="text-gray-400">до повідомлень</span>
-              <span className="text-gray-500">›</span>
+              <Tag className="w-3.5 h-3.5" />
+              <span className="font-medium">Мітки</span>
+              {selectedTags.length > 0 && (
+                <span className="text-[11.5px] bg-white/15 rounded-full px-1.5 leading-5 min-w-[1.25rem] text-center">
+                  {selectedTags.length}
+                </span>
+              )}
             </button>
+            {selectedTags.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setSelectedTags([])}
+                className="flex items-center gap-1 h-9 px-3 rounded-full bg-gray-900/85 backdrop-blur-md border border-white/5 text-[13px] text-gray-400 hover:text-gray-200"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Скинути</span>
+              </button>
+            )}
           </div>
+          {tagPanelOpen && allTags.length > 0 && (
+            <div className="mt-2 p-2 rounded-2xl bg-gray-900/85 backdrop-blur-md border border-white/5 max-h-40 overflow-y-auto">
+              <div className="flex flex-wrap gap-1.5">
+                {allTags.map((tg) => {
+                  const active = selectedTags.includes(tg);
+                  return (
+                    <button
+                      key={tg}
+                      type="button"
+                      onClick={() => toggleTag(tg)}
+                      className={`flex items-center gap-1 h-7 px-2.5 rounded-full text-[12px] transition-colors ${
+                        active
+                          ? "bg-violet-500/30 text-violet-100 border border-violet-400/40"
+                          : "bg-white/5 text-gray-300 border border-white/5 hover:bg-white/10"
+                      }`}
+                    >
+                      {active && <Check className="w-3 h-3" />}
+                      <span>#{tg}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {tagPanelOpen && allTags.length === 0 && (
+            <div className="mt-2 p-3 rounded-2xl bg-gray-900/85 backdrop-blur-md border border-white/5 text-[12.5px] text-gray-500 text-center">
+              Ще немає міток
+            </div>
+          )}
         </div>
       </div>
 
@@ -123,7 +189,7 @@ export default function SavedSearchOverlay({ open, items, onClose, onJump }: Pro
           }}
         >
           <div className="max-w-3xl mx-auto">
-            {q.trim().length === 0 ? (
+            {q.trim().length === 0 && selectedTags.length === 0 ? (
               <div className="text-center text-gray-500 text-[13px] mt-8">
                 Введіть запит для пошуку
               </div>

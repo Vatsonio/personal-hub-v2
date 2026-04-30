@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { X, MoreHorizontal, Search, CornerDownLeft } from "lucide-react";
+import { X, MoreHorizontal, Search, ChevronsLeft } from "lucide-react";
 import SavedBubble from "./SavedBubble";
 import type { SavedItem } from "@/types/domain";
 
@@ -108,7 +108,7 @@ export default function SavedPinnedView({
                       className="mb-3 ml-1 w-7 h-7 rounded-full bg-violet-500/15 border border-violet-400/20 flex items-center justify-center text-violet-300 flex-shrink-0 hover:bg-violet-500/25 transition-colors"
                       title="Перейти до оригіналу"
                     >
-                      <CornerDownLeft className="w-3.5 h-3.5" />
+                      <ChevronsLeft className="w-3.5 h-3.5" />
                     </button>
                     <div className="flex-1 min-w-0">
                       <SavedBubble

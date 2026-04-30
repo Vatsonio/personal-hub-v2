@@ -83,7 +83,24 @@ export const translations = {
     "lightbox.zoom_in": "Збільшити",
     "lightbox.zoom_out": "Зменшити",
     "lightbox.download": "Завантажити",
-    "lightbox.close": "Закрити (Esc)"
+    "lightbox.close": "Закрити (Esc)",
+    // Confirm dialog
+    "saved.confirm.delete_one": "Видалити повідомлення?",
+    "saved.confirm.delete_many": (n: number) => `Видалити ${n} повідомлень?`,
+    "saved.confirm.body": "Цю дію не можна скасувати.",
+    "saved.confirm.confirm": "Видалити",
+    "saved.confirm.cancel": "Скасувати",
+    // Empty states
+    "saved.empty.no_results": "Нічого не знайдено",
+    "saved.empty.no_results_sub": "Спробуйте змінити фільтр",
+    "saved.empty.reset": "Скинути фільтри",
+    "saved.empty.welcome": "Перше збережене попереду",
+    "saved.empty.welcome_sub": "Натисни на 📎 щоб додати фото, файл, або просто напиши нотатку",
+    // More menu
+    "saved.menu.sort_asc": "Сортувати: спочатку старі",
+    "saved.menu.sort_desc": "Сортувати: спочатку нові",
+    "saved.menu.export_all": "Експорт усього (.json)",
+    "saved.menu.clear_reminders": "Очистити всі нагадування"
   },
   "en-US": {
     // Feed
@@ -167,7 +184,24 @@ export const translations = {
     "lightbox.zoom_in": "Zoom in",
     "lightbox.zoom_out": "Zoom out",
     "lightbox.download": "Download",
-    "lightbox.close": "Close (Esc)"
+    "lightbox.close": "Close (Esc)",
+    // Confirm dialog
+    "saved.confirm.delete_one": "Delete message?",
+    "saved.confirm.delete_many": (n: number) => `Delete ${n} messages?`,
+    "saved.confirm.body": "This action cannot be undone.",
+    "saved.confirm.confirm": "Delete",
+    "saved.confirm.cancel": "Cancel",
+    // Empty states
+    "saved.empty.no_results": "Nothing found",
+    "saved.empty.no_results_sub": "Try changing the filter",
+    "saved.empty.reset": "Reset filters",
+    "saved.empty.welcome": "Your first saved item awaits",
+    "saved.empty.welcome_sub": "Tap 📎 to add a photo, file, or just type a note",
+    // More menu
+    "saved.menu.sort_asc": "Sort: oldest first",
+    "saved.menu.sort_desc": "Sort: newest first",
+    "saved.menu.export_all": "Export all (.json)",
+    "saved.menu.clear_reminders": "Clear all reminders"
   }
 } as const;
 

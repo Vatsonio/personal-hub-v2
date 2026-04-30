@@ -61,6 +61,7 @@ export default function SavedBubble({
   replyParent,
   isSelected,
   onToggleSelect,
+  onReply,
   onUpdateMeta,
   onSetReminder,
   onOpenImage,
@@ -72,12 +73,19 @@ export default function SavedBubble({
 }: Props) {
   const [showMdLocal, setShowMdLocal] = useState(false);
   const showMd = showMdProp ?? showMdLocal;
+  const [swipeX, setSwipeX] = useState(0);
 
   const longPress = useRef<{ timer: ReturnType<typeof setTimeout> | null; x: number; y: number }>({
     timer: null,
     x: 0,
     y: 0
   });
+  const swipeRef = useRef<{
+    startX: number;
+    startY: number;
+    active: boolean;
+    horizontal: boolean | null;
+  }>({ startX: 0, startY: 0, active: false, horizontal: null });
 
   const isMediaOnly =
     item.content_type === "image" &&
@@ -85,6 +93,8 @@ export default function SavedBubble({
     !item.title &&
     item.tags.length === 0 &&
     !item.reminder_at;
+
+  const SWIPE_THRESHOLD = 40;
 
   const onTouchStart = (e: React.TouchEvent) => {
     if (selectionMode) return;
@@ -94,19 +104,55 @@ export default function SavedBubble({
     longPress.current.timer = setTimeout(() => {
       onOpenMenu?.({ x: t.clientX, y: t.clientY, item });
     }, 500);
+    swipeRef.current = {
+      startX: t.clientX,
+      startY: t.clientY,
+      active: true,
+      horizontal: null
+    };
   };
   const onTouchEnd = () => {
     if (longPress.current.timer) clearTimeout(longPress.current.timer);
     longPress.current.timer = null;
+
+    // Swipe-to-reply: if locked horizontal and past threshold → trigger reply
+    if (swipeRef.current.active && swipeRef.current.horizontal && swipeX > SWIPE_THRESHOLD) {
+      onReply();
+    }
+    swipeRef.current.active = false;
+    swipeRef.current.horizontal = null;
+    setSwipeX(0);
   };
   const onTouchMove = (e: React.TouchEvent) => {
     const t = e.touches[0];
+    const dx = t.clientX - swipeRef.current.startX;
+    const dy = t.clientY - swipeRef.current.startY;
     if (
       Math.abs(t.clientX - longPress.current.x) > 8 ||
       Math.abs(t.clientY - longPress.current.y) > 8
     ) {
       if (longPress.current.timer) clearTimeout(longPress.current.timer);
       longPress.current.timer = null;
+    }
+    if (!swipeRef.current.active) return;
+    // Lock direction once movement clearly exceeds 8px in either axis
+    if (swipeRef.current.horizontal === null) {
+      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+        swipeRef.current.horizontal = Math.abs(dx) > Math.abs(dy);
+        if (!swipeRef.current.horizontal) {
+          // vertical scroll — abandon swipe
+          swipeRef.current.active = false;
+          setSwipeX(0);
+          return;
+        }
+      } else {
+        return;
+      }
+    }
+    // Only follow rightward swipes
+    if (swipeRef.current.horizontal) {
+      const next = Math.max(0, Math.min(80, dx));
+      setSwipeX(next);
     }
   };
   const onContextMenuHandler = (e: React.MouseEvent) => {
@@ -156,10 +202,13 @@ export default function SavedBubble({
         onTouchEnd={onTouchEnd}
         onTouchCancel={onTouchEnd}
         onTouchMove={onTouchMove}
-        className={`max-w-[80%] sm:max-w-[70%] rounded-2xl relative overflow-hidden transition-shadow select-none ${bubbleBg} ${bubblePad} ${
+        className={`max-w-[80%] sm:max-w-[70%] rounded-2xl relative overflow-hidden select-none ${bubbleBg} ${bubblePad} ${
           selectionMode ? "cursor-pointer" : ""
-        }`}
-        style={{ WebkitTouchCallout: "none" }}
+        } ${swipeX === 0 ? "transition-transform duration-150" : ""}`}
+        style={{
+          WebkitTouchCallout: "none",
+          transform: swipeX > 0 ? `translateX(${swipeX}px)` : undefined
+        }}
       >
         {/* Reply quote */}
         {replyParent && (
@@ -300,6 +349,25 @@ export default function SavedBubble({
             ))}
           </div>
         )}
+
+        {/* Reaction marks */}
+        {(() => {
+          const meta = (item.metadata as Record<string, unknown>) ?? {};
+          const marks = Array.isArray(meta.marks) ? (meta.marks as string[]) : [];
+          if (marks.length === 0) return null;
+          return (
+            <div className="absolute right-1.5 top-1 flex gap-0.5 pointer-events-none">
+              {marks.map((m, i) => (
+                <span
+                  key={`${m}-${i}`}
+                  className="text-[12px] leading-none px-1 py-0.5 rounded-full bg-black/40 backdrop-blur-sm"
+                >
+                  {m}
+                </span>
+              ))}
+            </div>
+          );
+        })()}
 
         {/* Time + indicators */}
         <div

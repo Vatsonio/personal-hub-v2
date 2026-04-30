@@ -104,15 +104,15 @@ export default function SavedFeed({
           <div className="w-14 h-14 rounded-2xl bg-gray-800/60 border border-white/5 flex items-center justify-center mb-3">
             <SearchX className="w-7 h-7 text-gray-500" />
           </div>
-          <p className="text-[14px] text-gray-300 font-medium">Нічого не знайдено</p>
-          <p className="text-[12px] text-gray-500 mt-1">Спробуйте змінити фільтр</p>
+          <p className="text-[14px] text-gray-300 font-medium">{t("saved.empty.no_results")}</p>
+          <p className="text-[12px] text-gray-500 mt-1">{t("saved.empty.no_results_sub")}</p>
           {onResetFilters && (
             <button
               type="button"
               onClick={onResetFilters}
               className="mt-3 px-3 h-8 rounded-full bg-violet-500/15 hover:bg-violet-500/25 text-[12.5px] text-violet-300 transition-colors"
             >
-              Скинути фільтри
+              {t("saved.empty.reset")}
             </button>
           )}
         </div>
@@ -123,9 +123,9 @@ export default function SavedFeed({
         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/30 to-violet-500/10 border border-white/5 flex items-center justify-center mb-3">
           <Bookmark className="w-8 h-8 text-violet-300" />
         </div>
-        <p className="text-[14.5px] text-gray-200 font-medium">Перше збережене попереду</p>
+        <p className="text-[14.5px] text-gray-200 font-medium">{t("saved.empty.welcome")}</p>
         <p className="text-[12.5px] text-gray-500 mt-1 max-w-[260px]">
-          Натисни на 📎 щоб додати фото, файл, або просто напиши нотатку
+          {t("saved.empty.welcome_sub")}
         </p>
       </div>
     );

@@ -34,7 +34,10 @@ type Props = {
   ctx: CtxState;
   onClose: () => void;
   onAction: (id: CtxActionId, item: SavedItem) => void;
+  onReact?: (emoji: string, item: SavedItem) => void;
 };
+
+const QUICK_REACTIONS = ["📌", "🔥", "💡", "✅", "⚠️", "❤️"];
 
 type MenuRow =
   | { divider: true }
@@ -45,7 +48,7 @@ type MenuRow =
       danger?: boolean;
     };
 
-export default function SavedContextMenu({ ctx, onClose, onAction }: Props) {
+export default function SavedContextMenu({ ctx, onClose, onAction, onReact }: Props) {
   const [pos, setPos] = useState({ left: 0, top: 0 });
 
   useLayoutEffect(() => {
@@ -108,6 +111,23 @@ export default function SavedContextMenu({ ctx, onClose, onAction }: Props) {
           WebkitBackdropFilter: "blur(20px)"
         }}
       >
+        {onReact && (
+          <div className="flex items-center justify-between gap-1 px-2 pt-2 pb-1.5 border-b border-white/5">
+            {QUICK_REACTIONS.map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                onClick={() => {
+                  onReact(emoji, item);
+                  onClose();
+                }}
+                className="w-8 h-8 rounded-full hover:bg-white/10 active:scale-90 transition-all flex items-center justify-center text-[18px] leading-none"
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="py-1.5">
           {items.map((row, idx) =>
             "divider" in row ? (

@@ -18,6 +18,7 @@ import { useSavedItems } from "./hooks/useSavedItems";
 import { useSavedSearch } from "./hooks/useSavedSearch";
 import type { SavedItem } from "@/types/domain";
 import { readSettings, SETTINGS_EVENT_NAME } from "@/lib/settings";
+import { useLocale } from "@/components/LocaleProvider";
 
 type Props = {
   initialItems: SavedItem[];
@@ -43,6 +44,7 @@ export default function SavedClient({
   storageLimit: initialStorageLimit = 0
 }: Props) {
   const [userId] = useState(initialUserId);
+  const { t } = useLocale();
   const [isGlass, setIsGlass] = useState(false);
   useEffect(() => {
     const check = () => setIsGlass(document.body.classList.contains("theme-glass"));
@@ -424,7 +426,19 @@ export default function SavedClient({
         }
       />
 
-      <SavedContextMenu ctx={ctx} onClose={() => setCtx(null)} onAction={handleCtxAction} />
+      <SavedContextMenu
+        ctx={ctx}
+        onClose={() => setCtx(null)}
+        onAction={handleCtxAction}
+        onReact={(emoji, item) => {
+          const meta = (item.metadata as Record<string, unknown>) ?? {};
+          const existing = Array.isArray(meta.marks) ? (meta.marks as string[]) : [];
+          const next = existing.includes(emoji)
+            ? existing.filter((m) => m !== emoji)
+            : [...existing, emoji];
+          updateItem(item.id, { metadata: { ...meta, marks: next } });
+        }}
+      />
 
       <SavedSearchOverlay
         open={searchOpen}
@@ -445,15 +459,13 @@ export default function SavedClient({
         open={confirmDelete !== null}
         title={
           confirmDelete?.kind === "bulk"
-            ? `Видалити ${confirmDelete.count} ${
-                confirmDelete.count === 1 ? "повідомлення" : "повідомлень"
-              }?`
-            : "Видалити повідомлення?"
+            ? t("saved.confirm.delete_many", confirmDelete.count)
+            : t("saved.confirm.delete_one")
         }
-        body="Цю дію не можна скасувати."
+        body={t("saved.confirm.body")}
         danger
-        confirmLabel="Видалити"
-        cancelLabel="Скасувати"
+        confirmLabel={t("saved.confirm.confirm")}
+        cancelLabel={t("saved.confirm.cancel")}
         onConfirm={performConfirmedDelete}
         onCancel={() => setConfirmDelete(null)}
       />
