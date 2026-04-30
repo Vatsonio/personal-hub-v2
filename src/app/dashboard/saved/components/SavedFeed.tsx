@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, SearchX, Bookmark } from "lucide-react";
 import SavedBubble from "./SavedBubble";
 import ImageLightbox from "./ImageLightbox";
 import { useLocale } from "@/components/LocaleProvider";
@@ -10,6 +10,7 @@ import type { SavedItem } from "@/types/domain";
 type Props = {
   items: SavedItem[];
   allItems: SavedItem[];
+  onResetFilters?: () => void;
   selectedIds: Set<string>;
   onToggleSelect: (id: string) => void;
   onPin: (id: string) => void;
@@ -25,6 +26,7 @@ type Props = {
   expandedMdIds?: Set<string>;
   reminderPickerId?: string | null;
   onCloseReminderPicker?: () => void;
+  sortDir?: "asc" | "desc";
 };
 
 export default function SavedFeed({
@@ -41,10 +43,12 @@ export default function SavedFeed({
   onUpdateMeta,
   onSetReminder,
   onOpenMenu,
+  onResetFilters,
   selectionMode = false,
   expandedMdIds,
   reminderPickerId,
-  onCloseReminderPicker
+  onCloseReminderPicker,
+  sortDir = "asc"
 }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const dateRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -92,18 +96,46 @@ export default function SavedFeed({
   }, [items.length]);
 
   if (items.length === 0) {
+    // Filtered empty (some items exist but none match) vs welcome empty
+    const isFilteredEmpty = allItems.length > 0;
+    if (isFilteredEmpty) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full px-6 text-center select-none">
+          <div className="w-14 h-14 rounded-2xl bg-gray-800/60 border border-white/5 flex items-center justify-center mb-3">
+            <SearchX className="w-7 h-7 text-gray-500" />
+          </div>
+          <p className="text-[14px] text-gray-300 font-medium">Нічого не знайдено</p>
+          <p className="text-[12px] text-gray-500 mt-1">Спробуйте змінити фільтр</p>
+          {onResetFilters && (
+            <button
+              type="button"
+              onClick={onResetFilters}
+              className="mt-3 px-3 h-8 rounded-full bg-violet-500/15 hover:bg-violet-500/25 text-[12.5px] text-violet-300 transition-colors"
+            >
+              Скинути фільтри
+            </button>
+          )}
+        </div>
+      );
+    }
     return (
-      <div className="flex flex-col items-center justify-center h-full text-gray-600 select-none">
-        <span className="text-4xl mb-3">📌</span>
-        <p className="text-sm">{t("feed.empty")}</p>
-        <p className="text-xs mt-1">{t("feed.empty_sub")}</p>
+      <div className="flex flex-col items-center justify-center h-full px-6 text-center select-none">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/30 to-violet-500/10 border border-white/5 flex items-center justify-center mb-3">
+          <Bookmark className="w-8 h-8 text-violet-300" />
+        </div>
+        <p className="text-[14.5px] text-gray-200 font-medium">Перше збережене попереду</p>
+        <p className="text-[12.5px] text-gray-500 mt-1 max-w-[260px]">
+          Натисни на 📎 щоб додати фото, файл, або просто напиши нотатку
+        </p>
       </div>
     );
   }
 
-  const sorted = [...items].sort(
-    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-  );
+  const sorted = [...items].sort((a, b) => {
+    const ta = new Date(a.created_at).getTime();
+    const tb = new Date(b.created_at).getTime();
+    return sortDir === "asc" ? ta - tb : tb - ta;
+  });
 
   const rendered: React.ReactNode[] = [];
   let lastDateStr = "";

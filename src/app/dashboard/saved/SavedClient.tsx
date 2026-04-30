@@ -13,6 +13,7 @@ import SavedSelectionHeader from "./components/SavedSelectionHeader";
 import SavedSelectionActionBar from "./components/SavedSelectionActionBar";
 import SavedSearchOverlay from "./components/SavedSearchOverlay";
 import SavedConfirmDialog from "./components/SavedConfirmDialog";
+import SavedMoreMenu, { type MoreActionId } from "./components/SavedMoreMenu";
 import { useSavedItems } from "./hooks/useSavedItems";
 import { useSavedSearch } from "./hooks/useSavedSearch";
 import type { SavedItem } from "@/types/domain";
@@ -121,6 +122,40 @@ export default function SavedClient({
   const [confirmDelete, setConfirmDelete] = useState<
     { kind: "single"; id: string } | { kind: "bulk"; count: number } | null
   >(null);
+
+  // More menu state + sort dir
+  const [moreAnchor, setMoreAnchor] = useState<{ x: number; y: number } | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const handleMoreAction = useCallback(
+    (id: MoreActionId) => {
+      switch (id) {
+        case "sort_asc":
+          setSortDir("asc");
+          break;
+        case "sort_desc":
+          setSortDir("desc");
+          break;
+        case "export_all": {
+          const blob = new Blob([JSON.stringify(items, null, 2)], { type: "application/json" });
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          const date = new Date().toISOString().slice(0, 10);
+          a.download = `saved-bulk-${date}.json`;
+          a.click();
+          break;
+        }
+        case "clear_reminders": {
+          const withReminders = items.filter((i) => i.reminder_at);
+          for (const it of withReminders) {
+            updateItem(it.id, { reminder_at: null });
+          }
+          break;
+        }
+      }
+    },
+    [items, updateItem]
+  );
 
   const handleCopy = useCallback(async (item: SavedItem) => {
     const text = item.content_type === "link" ? item.source_url : item.content;
@@ -288,6 +323,7 @@ export default function SavedClient({
                 pinnedCount={pinned.length}
                 totalCount={items.length}
                 onSearch={() => setSearchOpen(true)}
+                onMore={(anchor) => setMoreAnchor(anchor)}
                 storageUsed={storageUsed}
                 storageLimit={storageLimit}
               />
@@ -332,6 +368,9 @@ export default function SavedClient({
             onFavorite={(id) => updateItem(id, { is_favorite: true })}
             onUnfavorite={(id) => updateItem(id, { is_favorite: false })}
             onDelete={(id) => setConfirmDelete({ kind: "single", id })}
+            onResetFilters={() =>
+              setFilters({ type: "all", pinned: false, favorite: false, tags: [] })
+            }
             onReply={setReplyTo}
             onUpdateMeta={(id, meta) =>
               updateItem(id, {
@@ -344,6 +383,7 @@ export default function SavedClient({
             expandedMdIds={expandedMdIds}
             reminderPickerId={reminderPickerId}
             onCloseReminderPicker={() => setReminderPickerId(null)}
+            sortDir={sortDir}
           />
         </div>
 
@@ -391,6 +431,14 @@ export default function SavedClient({
         items={items}
         onClose={() => setSearchOpen(false)}
         onJump={jumpToItem}
+      />
+
+      <SavedMoreMenu
+        open={moreAnchor !== null}
+        anchor={moreAnchor}
+        sortDir={sortDir}
+        onClose={() => setMoreAnchor(null)}
+        onAction={handleMoreAction}
       />
 
       <SavedConfirmDialog

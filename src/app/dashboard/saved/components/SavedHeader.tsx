@@ -7,7 +7,7 @@ type Props = {
   pinnedCount: number;
   totalCount: number;
   onSearch: () => void;
-  onMore?: () => void;
+  onMore?: (anchor: { x: number; y: number }) => void;
   storageUsed?: number;
   storageLimit?: number;
 };
@@ -73,7 +73,10 @@ export default function SavedHeader({
         {/* More */}
         <button
           type="button"
-          onClick={onMore}
+          onClick={(e) => {
+            const r = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+            onMore?.({ x: r.right, y: r.bottom + 6 });
+          }}
           className="w-10 h-10 rounded-full bg-gray-900/85 backdrop-blur-md border border-white/5 flex items-center justify-center"
           title="Більше"
         >

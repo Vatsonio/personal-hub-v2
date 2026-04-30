@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Send, X, FileUp, Loader2, AlertTriangle, Paperclip, Mic } from "lucide-react";
 import type { SavedItem, SavedContentType, CreateSavedItemInput } from "@/types/domain";
 import SavedAttachSheet, { type AttachPickId } from "./SavedAttachSheet";
+import SavedImagePreview from "./SavedImagePreview";
 
 type Props = {
   onAdd: (input: CreateSavedItemInput) => void;
@@ -39,6 +40,8 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [attachOpen, setAttachOpen] = useState(false);
   const [captureMode, setCaptureMode] = useState<"environment" | null>(null);
+  // Pending image previews (B2/B3): images selected but not uploaded yet
+  const [pendingImages, setPendingImages] = useState<File[]>([]);
 
   // Auto-dismiss upload errors after 4 seconds
   useEffect(() => {
@@ -85,42 +88,53 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
     handleTypeSelect(picked);
   }
 
+  // Upload a single file via the API. Returns metadata or throws.
+  async function uploadOne(file: File): Promise<{ url: string; name: string; size: number }> {
+    const form = new FormData();
+    form.append("file", file);
+    const data = await new Promise<{ url: string; name: string; size: number; error?: string }>(
+      (resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/upload");
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
+        };
+        xhr.onload = () => {
+          try {
+            resolve(JSON.parse(xhr.responseText));
+          } catch {
+            reject(new Error("Invalid response"));
+          }
+        };
+        xhr.onerror = () => reject(new Error("Network error"));
+        xhr.send(form);
+      }
+    );
+    if (data.error) throw new Error(data.error);
+    return data;
+  }
+
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
+    const files = Array.from(fileList);
     e.target.value = "";
 
+    // For images, defer upload — show preview overlay so user can add caption.
+    if (type === "image") {
+      setPendingImages(files);
+      return;
+    }
+
+    // For files, upload first only (single)
+    const file = files[0];
     setUploading(true);
     setUploadProgress(0);
     setUploadError(null);
-
     try {
-      const form = new FormData();
-      form.append("file", file);
-
-      const data = await new Promise<{ url: string; name: string; size: number; error?: string }>(
-        (resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open("POST", "/api/upload");
-          xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
-          };
-          xhr.onload = () => {
-            try {
-              resolve(JSON.parse(xhr.responseText));
-            } catch {
-              reject(new Error("Invalid response"));
-            }
-          };
-          xhr.onerror = () => reject(new Error("Network error"));
-          xhr.send(form);
-        }
-      );
-
-      if (data.error) throw new Error(data.error);
-
+      const data = await uploadOne(file);
       const input: CreateSavedItemInput = {
-        content_type: type === "image" ? "image" : "file",
+        content_type: "file",
         content: data.url,
         source_url: data.url,
         title: file.name,
@@ -132,6 +146,42 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
       onUploadDone?.();
       setType("text");
       setCaptureMode(null);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed");
+      setType("text");
+      setCaptureMode(null);
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
+  }
+
+  async function handleSendImages(caption: string, files: File[]) {
+    setPendingImages([]);
+    setUploading(true);
+    setUploadProgress(0);
+    setUploadError(null);
+    try {
+      const trimmedCaption = caption.trim();
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const data = await uploadOne(file);
+        const isFirst = i === 0;
+        const input: CreateSavedItemInput = {
+          content_type: "image",
+          content: isFirst && trimmedCaption ? trimmedCaption : null,
+          source_url: data.url,
+          title: file.name,
+          tags: isFirst && trimmedCaption ? parseTags(trimmedCaption) : [],
+          reply_to: replyTo?.id ?? null,
+          metadata: { size: data.size, mime: file.type }
+        };
+        onAdd(input);
+      }
+      onUploadDone?.();
+      setType("text");
+      setCaptureMode(null);
+      onCancelReply();
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Upload failed");
       setType("text");
@@ -188,8 +238,22 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
         type="file"
         className="hidden"
         accept={type === "image" ? "image/*" : "*/*"}
+        multiple={type === "image" && !captureMode}
         {...(captureMode ? { capture: captureMode } : {})}
         onChange={handleFileChange}
+      />
+
+      {/* Image preview overlay (defer upload until user taps Send) */}
+      <SavedImagePreview
+        files={pendingImages}
+        open={pendingImages.length > 0}
+        onCancel={() => {
+          setPendingImages([]);
+          setType("text");
+          setCaptureMode(null);
+        }}
+        onSend={handleSendImages}
+        onRemoveFile={(idx) => setPendingImages((prev) => prev.filter((_, i) => i !== idx))}
       />
 
       {/* Reply preview */}
