@@ -1,6 +1,7 @@
 "use client";
 
 import { Image as ImageIcon, Camera, FileUp, Link2, Mic, X } from "lucide-react";
+import { useLocale } from "@/components/LocaleProvider";
 import type { SavedContentType } from "@/types/domain";
 
 export type AttachPickId = SavedContentType | "camera";
@@ -11,51 +12,59 @@ type Props = {
   onPick: (id: AttachPickId) => void;
 };
 
-const OPTIONS: {
+type AttachOption = {
   id: AttachPickId;
   Icon: React.ElementType;
-  label: string;
+  labelKey:
+    | "saved.attach.image"
+    | "saved.attach.camera"
+    | "saved.attach.file"
+    | "saved.attach.link"
+    | "saved.attach.voice";
   tint: string;
   stroke: string;
-}[] = [
+};
+
+const OPTIONS: AttachOption[] = [
   {
     id: "image",
     Icon: ImageIcon,
-    label: "Фото",
+    labelKey: "saved.attach.image",
     tint: "from-violet-500/30 to-violet-500/10",
     stroke: "text-violet-300"
   },
   {
     id: "camera",
     Icon: Camera,
-    label: "Камера",
+    labelKey: "saved.attach.camera",
     tint: "from-blue-500/30 to-blue-500/10",
     stroke: "text-blue-300"
   },
   {
     id: "file",
     Icon: FileUp,
-    label: "Файл",
+    labelKey: "saved.attach.file",
     tint: "from-emerald-500/30 to-emerald-500/10",
     stroke: "text-emerald-300"
   },
   {
     id: "link",
     Icon: Link2,
-    label: "Посилання",
+    labelKey: "saved.attach.link",
     tint: "from-cyan-500/30 to-cyan-500/10",
     stroke: "text-cyan-300"
   },
   {
     id: "voice",
     Icon: Mic,
-    label: "Голос",
+    labelKey: "saved.attach.voice",
     tint: "from-rose-500/30 to-rose-500/10",
     stroke: "text-rose-300"
   }
 ];
 
 export default function SavedAttachSheet({ open, onClose, onPick }: Props) {
+  const { t } = useLocale();
   return (
     <>
       <div
@@ -72,12 +81,12 @@ export default function SavedAttachSheet({ open, onClose, onPick }: Props) {
       >
         <div className="max-w-3xl mx-auto rounded-3xl bg-gray-900/95 backdrop-blur-md border border-white/5 shadow-2xl overflow-hidden">
           <div className="flex items-center justify-between px-4 pt-3 pb-1">
-            <div className="text-[13px] text-gray-300 font-medium">Додати</div>
+            <div className="text-[13px] text-gray-300 font-medium">{t("saved.attach.title")}</div>
             <button
               type="button"
               onClick={onClose}
               className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-300"
-              title="Закрити"
+              title={t("saved.attach.close")}
             >
               <X className="w-4 h-4" />
             </button>
@@ -100,7 +109,7 @@ export default function SavedAttachSheet({ open, onClose, onPick }: Props) {
                   >
                     <Icon className={`w-5 h-5 ${opt.stroke}`} />
                   </span>
-                  <span className="text-[11px] text-gray-300">{opt.label}</span>
+                  <span className="text-[11px] text-gray-300">{t(opt.labelKey)}</span>
                 </button>
               );
             })}

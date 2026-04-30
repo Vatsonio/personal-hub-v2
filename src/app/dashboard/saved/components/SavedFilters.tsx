@@ -1,6 +1,7 @@
 "use client";
 
 import { Pin, Heart, Type, Link2, FileUp, Image, Mic } from "lucide-react";
+import { useLocale } from "@/components/LocaleProvider";
 import type { SavedItem, SavedContentType } from "@/types/domain";
 
 type Filters = {
@@ -16,17 +17,29 @@ type Props = {
   items: SavedItem[];
 };
 
-const TYPE_OPTIONS: { value: SavedContentType | "all"; label: string; Icon: React.ElementType }[] =
-  [
-    { value: "all", label: "Всі", Icon: Type },
-    { value: "text", label: "Текст", Icon: Type },
-    { value: "link", label: "Посилання", Icon: Link2 },
-    { value: "file", label: "Файл", Icon: FileUp },
-    { value: "image", label: "Зображення", Icon: Image },
-    { value: "voice", label: "Голос", Icon: Mic }
-  ];
+type FilterLabelKey =
+  | "saved.filters.all"
+  | "saved.filters.text"
+  | "saved.filters.link"
+  | "saved.filters.file"
+  | "saved.filters.image"
+  | "saved.filters.voice";
+
+const TYPE_OPTIONS: {
+  value: SavedContentType | "all";
+  labelKey: FilterLabelKey;
+  Icon: React.ElementType;
+}[] = [
+  { value: "all", labelKey: "saved.filters.all", Icon: Type },
+  { value: "text", labelKey: "saved.filters.text", Icon: Type },
+  { value: "link", labelKey: "saved.filters.link", Icon: Link2 },
+  { value: "file", labelKey: "saved.filters.file", Icon: FileUp },
+  { value: "image", labelKey: "saved.filters.image", Icon: Image },
+  { value: "voice", labelKey: "saved.filters.voice", Icon: Mic }
+];
 
 export default function SavedFilters({ filters, onChange, items }: Props) {
+  const { t } = useLocale();
   const allTags = Array.from(new Set(items.flatMap((i) => i.tags))).sort();
 
   function toggle<K extends keyof Filters>(key: K, val: Filters[K]) {
@@ -49,7 +62,7 @@ export default function SavedFilters({ filters, onChange, items }: Props) {
       {/* Типи */}
       <div className="overflow-x-auto -mx-1 px-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <div className="flex gap-1.5 min-w-max">
-          {TYPE_OPTIONS.map(({ value, label, Icon }) => (
+          {TYPE_OPTIONS.map(({ value, labelKey, Icon }) => (
             <button
               key={value}
               onClick={() => toggle("type", value)}
@@ -60,7 +73,7 @@ export default function SavedFilters({ filters, onChange, items }: Props) {
               }`}
             >
               <Icon className="w-3 h-3" />
-              {label}
+              {t(labelKey)}
             </button>
           ))}
 

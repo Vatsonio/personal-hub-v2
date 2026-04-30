@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Send, X, FileUp, Loader2, AlertTriangle, Paperclip, Mic } from "lucide-react";
+import { useLocale } from "@/components/LocaleProvider";
 import type { SavedItem, SavedContentType, CreateSavedItemInput } from "@/types/domain";
 import SavedAttachSheet, { type AttachPickId } from "./SavedAttachSheet";
 import SavedImagePreview from "./SavedImagePreview";
@@ -33,6 +34,7 @@ function fileExt(name: string) {
 }
 
 export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelReply }: Props) {
+  const { t } = useLocale();
   const [text, setText] = useState("");
   const [type, setType] = useState<SavedContentType>("text");
   const [uploading, setUploading] = useState(false);
@@ -147,7 +149,7 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
       setType("text");
       setCaptureMode(null);
     } catch (err) {
-      setUploadError(err instanceof Error ? err.message : "Upload failed");
+      setUploadError(err instanceof Error ? err.message : t("saved.composer.upload_failed"));
       setType("text");
       setCaptureMode(null);
     } finally {
@@ -183,7 +185,7 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
       setCaptureMode(null);
       onCancelReply();
     } catch (err) {
-      setUploadError(err instanceof Error ? err.message : "Upload failed");
+      setUploadError(err instanceof Error ? err.message : t("saved.composer.upload_failed"));
       setType("text");
       setCaptureMode(null);
     } finally {
@@ -260,7 +262,8 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
       {replyTo && (
         <div className="flex items-center gap-2 mb-2 px-3 py-1.5 bg-violet-500/10 border border-violet-500/20 rounded-xl text-xs text-violet-300">
           <span className="flex-1 truncate">
-            ↩ Відповідь на: {replyTo.title ?? replyTo.content?.slice(0, 50) ?? "…"}
+            {t("saved.composer.reply_prefix")}{" "}
+            {replyTo.title ?? replyTo.content?.slice(0, 50) ?? t("saved.composer.reply_fallback")}
           </span>
           <button onClick={onCancelReply} className="hover:text-white">
             <X className="w-3.5 h-3.5" />
@@ -273,7 +276,7 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
         <div className="mb-2 px-3 py-2 bg-gray-800/60 border border-gray-700/50 rounded-xl">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs text-gray-400 flex items-center gap-1.5">
-              <Loader2 className="w-3 h-3 animate-spin" /> Завантаження…
+              <Loader2 className="w-3 h-3 animate-spin" /> {t("saved.composer.uploading")}
             </span>
             <span className="text-xs text-gray-500">{uploadProgress}%</span>
           </div>
@@ -312,12 +315,14 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
         >
           {uploading ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" /> Завантаження…
+              <Loader2 className="w-4 h-4 animate-spin" /> {t("saved.composer.uploading")}
             </>
           ) : (
             <>
-              <FileUp className="w-4 h-4" /> Натисни, щоб вибрати{" "}
-              {type === "image" ? "зображення" : "файл"}
+              <FileUp className="w-4 h-4" /> {t("saved.composer.pick_prefix")}{" "}
+              {type === "image"
+                ? t("saved.composer.placeholder.image")
+                : t("saved.composer.placeholder.file")}
             </>
           )}
         </button>
@@ -332,7 +337,7 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
                 ? "bg-violet-500/20 text-violet-200"
                 : "bg-gray-900/70 text-gray-300 hover:text-white"
             }`}
-            title="Прикріпити"
+            title={t("saved.composer.attach")}
           >
             <Paperclip className="w-5 h-5" />
           </button>
@@ -343,7 +348,11 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={type === "link" ? "Вставте посилання…" : "Повідомлення"}
+              placeholder={
+                type === "link"
+                  ? t("saved.composer.placeholder.link")
+                  : t("saved.composer.placeholder.text")
+              }
               rows={1}
               className="flex-1 bg-transparent text-base sm:text-[14.5px] text-white placeholder-gray-500 resize-none focus:outline-none leading-relaxed min-h-[1.5rem] max-h-40 py-1"
             />
@@ -358,7 +367,7 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
                 ? "bg-violet-500 hover:bg-violet-400 border-transparent shadow-lg shadow-violet-500/20"
                 : "bg-gray-900/70 border-white/5 text-gray-300 backdrop-blur-md"
             }`}
-            title={text.trim() ? "Надіслати" : "Голосове"}
+            title={text.trim() ? t("saved.composer.send") : t("saved.composer.voice")}
           >
             <Mic
               className={`w-5 h-5 absolute transition-all duration-200 ${
@@ -375,9 +384,7 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
       )}
 
       <p className="text-gray-700 text-xs mt-1.5 pl-3 hidden sm:block">
-        {isUploadMode
-          ? "Файл буде збережено у хмарному сховищі"
-          : "Ctrl+Enter — зберегти · #тег — автоматично розпізнається"}
+        {isUploadMode ? t("saved.composer.hint_upload") : t("saved.composer.hint_text")}
       </p>
     </div>
   );

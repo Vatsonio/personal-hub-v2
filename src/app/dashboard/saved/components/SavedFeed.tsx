@@ -209,7 +209,7 @@ export default function SavedFeed({
           showJump ? "jump-btn-shown" : "jump-btn-hidden"
         }`}
         style={{ bottom: "calc(8.5rem + env(safe-area-inset-bottom))" }}
-        title="Вниз"
+        title={t("saved.feed.scroll_bottom")}
       >
         <ChevronDown className="w-4 h-4" />
       </button>

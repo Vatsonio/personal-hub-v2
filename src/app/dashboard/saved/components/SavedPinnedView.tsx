@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { X, MoreHorizontal, Search, ChevronsLeft } from "lucide-react";
 import SavedBubble from "./SavedBubble";
+import { useLocale } from "@/components/LocaleProvider";
 import type { SavedItem } from "@/types/domain";
 
 type Props = {
@@ -40,6 +41,7 @@ export default function SavedPinnedView({
   onUnpinAll,
   onUpdateMeta
 }: Props) {
+  const { t } = useLocale();
   const groups = useMemo(() => {
     const sorted = [...items].sort(
       (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
@@ -64,12 +66,14 @@ export default function SavedPinnedView({
             type="button"
             onClick={onClose}
             className="w-10 h-10 rounded-full bg-gray-900/85 backdrop-blur-md border border-white/5 flex items-center justify-center text-gray-300"
-            title="Закрити"
+            title={t("saved.pinned.close")}
           >
             <X className="w-4 h-4" />
           </button>
           <div className="flex-1 flex items-center justify-center h-10 rounded-full bg-gray-900/85 backdrop-blur-md border border-white/5">
-            <div className="text-[14px] text-white font-medium">Прикріплено {items.length}</div>
+            <div className="text-[14px] text-white font-medium">
+              {t("saved.pinned.count", items.length)}
+            </div>
           </div>
           <button
             type="button"
@@ -90,7 +94,9 @@ export default function SavedPinnedView({
       >
         <div className="max-w-3xl mx-auto">
           {groups.length === 0 ? (
-            <div className="text-center text-gray-500 text-[13px] mt-12">Нічого не прикріплено</div>
+            <div className="text-center text-gray-500 text-[13px] mt-12">
+              {t("saved.pinned.empty")}
+            </div>
           ) : (
             groups.map((g) => (
               <section key={g.label}>
@@ -106,7 +112,7 @@ export default function SavedPinnedView({
                         onClose();
                       }}
                       className="mb-3 ml-1 w-7 h-7 rounded-full bg-violet-500/15 border border-violet-400/20 flex items-center justify-center text-violet-300 flex-shrink-0 hover:bg-violet-500/25 transition-colors"
-                      title="Перейти до оригіналу"
+                      title={t("saved.pinned.jump_to_original")}
                     >
                       <ChevronsLeft className="w-3.5 h-3.5" />
                     </button>
@@ -146,12 +152,12 @@ export default function SavedPinnedView({
             disabled={items.length === 0}
             className="flex-1 h-11 rounded-full bg-gray-900/85 backdrop-blur-md border border-white/5 text-[14px] text-gray-200 hover:bg-gray-800/85 transition-colors disabled:opacity-40"
           >
-            Відкріпити всі повідомлення
+            {t("saved.pinned.unpin_all")}
           </button>
           <button
             type="button"
             className="w-11 h-11 rounded-full bg-gray-900/85 backdrop-blur-md border border-white/5 flex items-center justify-center text-gray-300"
-            title="Пошук"
+            title={t("saved.pinned.search")}
           >
             <Search className="w-4 h-4" />
           </button>

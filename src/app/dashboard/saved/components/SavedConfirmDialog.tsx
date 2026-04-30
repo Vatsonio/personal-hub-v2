@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useLocale } from "@/components/LocaleProvider";
 
 type Props = {
   open: boolean;
@@ -18,11 +19,14 @@ export default function SavedConfirmDialog({
   title,
   body,
   danger = false,
-  confirmLabel = "OK",
-  cancelLabel = "Скасувати",
+  confirmLabel,
+  cancelLabel,
   onConfirm,
   onCancel
 }: Props) {
+  const { t } = useLocale();
+  const finalConfirm = confirmLabel ?? "OK";
+  const finalCancel = cancelLabel ?? t("saved.confirm.cancel");
   // Close on Escape
   useEffect(() => {
     if (!open) return;
@@ -59,7 +63,7 @@ export default function SavedConfirmDialog({
             onClick={onCancel}
             className="flex-1 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-[14px] text-gray-200 font-medium transition-colors"
           >
-            {cancelLabel}
+            {finalCancel}
           </button>
           <button
             type="button"
@@ -70,7 +74,7 @@ export default function SavedConfirmDialog({
                 : "bg-violet-500/90 hover:bg-violet-500 text-white"
             }`}
           >
-            {confirmLabel}
+            {finalConfirm}
           </button>
         </div>
       </div>

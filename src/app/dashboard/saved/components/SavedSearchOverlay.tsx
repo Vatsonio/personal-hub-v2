@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, X, Bookmark, Tag, Check } from "lucide-react";
+import { useLocale } from "@/components/LocaleProvider";
 import type { SavedItem } from "@/types/domain";
 
 type Props = {
@@ -15,18 +16,18 @@ function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit" });
 }
 
-function typeLabel(it: SavedItem): string {
-  if (it.content_type === "image") return "Фото";
-  if (it.content_type === "link") {
-    const meta = it.metadata as Record<string, string> | undefined;
-    return meta?.og_site_name || "Посилання";
-  }
-  if (it.content_type === "file") return "Файл";
-  if (it.content_type === "voice") return "Голос";
-  return (it.content || "").slice(0, 60);
-}
-
 export default function SavedSearchOverlay({ open, items, onClose, onJump }: Props) {
+  const { t } = useLocale();
+  const typeLabel = (it: SavedItem): string => {
+    if (it.content_type === "image") return t("saved.search.type.image");
+    if (it.content_type === "link") {
+      const meta = it.metadata as Record<string, string> | undefined;
+      return meta?.og_site_name || t("saved.search.type.link");
+    }
+    if (it.content_type === "file") return t("saved.search.type.file");
+    if (it.content_type === "voice") return t("saved.search.type.voice");
+    return (it.content || "").slice(0, 60);
+  };
   const [q, setQ] = useState("");
   const [listMode, setListMode] = useState(false);
   const [tagPanelOpen, setTagPanelOpen] = useState(false);
@@ -105,7 +106,7 @@ export default function SavedSearchOverlay({ open, items, onClose, onJump }: Pro
                 ref={inputRef}
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Пошук у Збереженому"
+                placeholder={t("saved.search.placeholder")}
                 className="flex-1 bg-transparent outline-none text-[14.5px] text-white placeholder-gray-500"
               />
             </div>
@@ -113,7 +114,7 @@ export default function SavedSearchOverlay({ open, items, onClose, onJump }: Pro
               type="button"
               onClick={onClose}
               className="w-11 h-11 rounded-full bg-gray-900/85 backdrop-blur-md border border-white/5 flex items-center justify-center text-gray-300"
-              title="Закрити"
+              title={t("saved.search.close")}
             >
               <X className="w-4 h-4" />
             </button>
@@ -129,7 +130,7 @@ export default function SavedSearchOverlay({ open, items, onClose, onJump }: Pro
               }`}
             >
               <Tag className="w-3.5 h-3.5" />
-              <span className="font-medium">Мітки</span>
+              <span className="font-medium">{t("saved.search.tags")}</span>
               {selectedTags.length > 0 && (
                 <span className="text-[11.5px] bg-white/15 rounded-full px-1.5 leading-5 min-w-[1.25rem] text-center">
                   {selectedTags.length}
@@ -143,7 +144,7 @@ export default function SavedSearchOverlay({ open, items, onClose, onJump }: Pro
                 className="flex items-center gap-1 h-9 px-3 rounded-full bg-gray-900/85 backdrop-blur-md border border-white/5 text-[13px] text-gray-400 hover:text-gray-200"
               >
                 <X className="w-3.5 h-3.5" />
-                <span>Скинути</span>
+                <span>{t("saved.search.reset")}</span>
               </button>
             )}
           </div>
@@ -173,7 +174,7 @@ export default function SavedSearchOverlay({ open, items, onClose, onJump }: Pro
           )}
           {tagPanelOpen && allTags.length === 0 && (
             <div className="mt-2 p-3 rounded-2xl bg-gray-900/85 backdrop-blur-md border border-white/5 text-[12.5px] text-gray-500 text-center">
-              Ще немає міток
+              {t("saved.search.no_tags")}
             </div>
           )}
         </div>
@@ -191,10 +192,12 @@ export default function SavedSearchOverlay({ open, items, onClose, onJump }: Pro
           <div className="max-w-3xl mx-auto">
             {q.trim().length === 0 && selectedTags.length === 0 ? (
               <div className="text-center text-gray-500 text-[13px] mt-8">
-                Введіть запит для пошуку
+                {t("saved.search.prompt")}
               </div>
             ) : matches.length === 0 ? (
-              <div className="text-center text-gray-500 text-[13px] mt-8">Нічого не знайдено</div>
+              <div className="text-center text-gray-500 text-[13px] mt-8">
+                {t("saved.search.no_results")}
+              </div>
             ) : (
               matches.map((it) => (
                 <button
@@ -211,7 +214,9 @@ export default function SavedSearchOverlay({ open, items, onClose, onJump }: Pro
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <div className="text-[14px] text-white font-medium truncate">Збережене</div>
+                      <div className="text-[14px] text-white font-medium truncate">
+                        {t("saved.search.label")}
+                      </div>
                       <div className="text-[11.5px] text-cyan-300 flex-shrink-0">
                         {fmtTime(it.created_at)}
                       </div>
@@ -235,14 +240,16 @@ export default function SavedSearchOverlay({ open, items, onClose, onJump }: Pro
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 h-10 px-3 rounded-full bg-gray-900/85 backdrop-blur-md border border-white/5">
             <Search className="w-3.5 h-3.5 text-gray-400" />
-            <span className="text-[13px] text-gray-300">{items.length} повідомлень</span>
+            <span className="text-[13px] text-gray-300">
+              {t("saved.search.total", items.length)}
+            </span>
           </div>
           <button
             type="button"
             onClick={() => setListMode((v) => !v)}
             className="h-10 px-4 rounded-full bg-gray-900/85 backdrop-blur-md border border-white/5 text-[13px] text-gray-200"
           >
-            {showList ? "Показати в чаті" : "Показати списком"}
+            {showList ? t("saved.search.show_chat") : t("saved.search.show_list")}
           </button>
         </div>
       </div>

@@ -15,6 +15,7 @@ import {
   Trash2,
   CheckCircle2
 } from "lucide-react";
+import { useLocale } from "@/components/LocaleProvider";
 import type { SavedItem } from "@/types/domain";
 
 export type CtxState = { x: number; y: number; item: SavedItem } | null;
@@ -49,6 +50,7 @@ type MenuRow =
     };
 
 export default function SavedContextMenu({ ctx, onClose, onAction, onReact }: Props) {
+  const { t } = useLocale();
   const [pos, setPos] = useState({ left: 0, top: 0 });
 
   useLayoutEffect(() => {
@@ -75,26 +77,26 @@ export default function SavedContextMenu({ ctx, onClose, onAction, onReact }: Pr
     (item.content_type === "link" && !!item.source_url);
 
   const rows: (MenuRow | false)[] = [
-    { id: "reply", label: "Відповісти", Icon: Reply },
-    hasCopyableText && { id: "copy", label: "Копіювати", Icon: Copy },
-    item.content_type === "text" && { id: "edit", label: "MD preview", Icon: Edit3 },
+    { id: "reply", label: t("saved.ctx.reply"), Icon: Reply },
+    hasCopyableText && { id: "copy", label: t("saved.ctx.copy"), Icon: Copy },
+    item.content_type === "text" && { id: "edit", label: t("saved.ctx.md_preview"), Icon: Edit3 },
     {
       id: "pin",
-      label: item.is_pinned ? "Відкріпити" : "Прикріпити",
+      label: item.is_pinned ? t("saved.ctx.unpin") : t("saved.ctx.pin"),
       Icon: item.is_pinned ? PinOff : Pin
     },
     {
       id: "favorite",
-      label: item.is_favorite ? "Прибрати з обраного" : "Обране",
+      label: item.is_favorite ? t("saved.ctx.unfavorite") : t("saved.ctx.favorite"),
       Icon: item.is_favorite ? HeartOff : Heart
     },
-    { id: "remind", label: "Нагадати", Icon: Bell },
-    { id: "export_md", label: "Експорт .md", Icon: FileText },
-    { id: "export_json", label: "Експорт .json", Icon: FileDown },
+    { id: "remind", label: t("saved.ctx.remind"), Icon: Bell },
+    { id: "export_md", label: t("saved.ctx.export_md"), Icon: FileText },
+    { id: "export_json", label: t("saved.ctx.export_json"), Icon: FileDown },
     { divider: true },
-    { id: "delete", label: "Видалити", Icon: Trash2, danger: true },
+    { id: "delete", label: t("saved.ctx.delete"), Icon: Trash2, danger: true },
     { divider: true },
-    { id: "select", label: "Вибрати", Icon: CheckCircle2 }
+    { id: "select", label: t("saved.ctx.select"), Icon: CheckCircle2 }
   ];
 
   const items: MenuRow[] = rows.filter(Boolean) as MenuRow[];

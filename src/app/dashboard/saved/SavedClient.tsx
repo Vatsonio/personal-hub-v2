@@ -169,19 +169,25 @@ export default function SavedClient({
     }
   }, []);
 
-  const handleExportMd = useCallback((item: SavedItem) => {
-    const lines: string[] = [];
-    if (item.title) lines.push(`# ${item.title}`, "");
-    if (item.content_type === "link" && item.source_url) lines.push(item.source_url);
-    else if (item.content) lines.push(item.content);
-    if (item.tags.length > 0) lines.push("", item.tags.map((t) => `#${t}`).join(" "));
-    lines.push("", `_Збережено: ${new Date(item.created_at).toLocaleString("uk-UA")}_`);
-    const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `saved-${item.id.slice(0, 8)}.md`;
-    a.click();
-  }, []);
+  const handleExportMd = useCallback(
+    (item: SavedItem) => {
+      const lines: string[] = [];
+      if (item.title) lines.push(`# ${item.title}`, "");
+      if (item.content_type === "link" && item.source_url) lines.push(item.source_url);
+      else if (item.content) lines.push(item.content);
+      if (item.tags.length > 0) lines.push("", item.tags.map((t) => `#${t}`).join(" "));
+      lines.push(
+        "",
+        `_${t("saved.bubble.export_saved_prefix")}: ${new Date(item.created_at).toLocaleString("uk-UA")}_`
+      );
+      const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `saved-${item.id.slice(0, 8)}.md`;
+      a.click();
+    },
+    [t]
+  );
 
   const handleExportJson = useCallback((item: SavedItem) => {
     const blob = new Blob([JSON.stringify(item, null, 2)], { type: "application/json" });
@@ -345,7 +351,7 @@ export default function SavedClient({
           {dbError && (
             <div className="flex-shrink-0 flex items-center gap-2 mt-2 mx-3 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-300">
               <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-              <span>Помилка з&apos;єднання з базою даних. Дані можуть бути застарілими.</span>
+              <span>{t("saved.error.db")}</span>
             </div>
           )}
 
@@ -353,7 +359,7 @@ export default function SavedClient({
           {connecting && (
             <div className="flex-shrink-0 flex items-center gap-2 mt-2 mx-3 px-3 py-1.5 bg-gray-800/60 border border-gray-700/50 rounded-xl text-xs text-gray-500">
               <Loader2 className="w-3 h-3 animate-spin" />
-              <span>Підключення до хмари…</span>
+              <span>{t("saved.connecting")}</span>
             </div>
           )}
         </div>
@@ -473,7 +479,7 @@ export default function SavedClient({
       {ftsLoading && (
         <div className="fixed bottom-20 right-4 z-40 text-xs text-gray-500 bg-gray-900/80 border border-white/5 rounded-full px-2 py-1 backdrop-blur-md">
           <Loader2 className="w-3 h-3 animate-spin inline mr-1" />
-          пошук…
+          {t("saved.search_loading")}
         </div>
       )}
     </>

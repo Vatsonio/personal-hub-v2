@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Send, X } from "lucide-react";
+import { useLocale } from "@/components/LocaleProvider";
 
 type Props = {
   files: File[];
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export default function SavedImagePreview({ files, open, onCancel, onSend, onRemoveFile }: Props) {
+  const { t } = useLocale();
   const [caption, setCaption] = useState("");
   const [active, setActive] = useState(0);
 
@@ -57,12 +59,14 @@ export default function SavedImagePreview({ files, open, onCancel, onSend, onRem
           type="button"
           onClick={onCancel}
           className="w-10 h-10 rounded-full bg-gray-900/85 backdrop-blur-md border border-white/5 flex items-center justify-center text-gray-300"
-          title="Скасувати"
+          title={t("saved.image_preview.cancel")}
         >
           <X className="w-4 h-4" />
         </button>
         <div className="flex-1 text-center text-[13.5px] text-gray-200">
-          {files.length === 1 ? "Зображення" : `Зображень: ${files.length}`}
+          {files.length === 1
+            ? t("saved.image_preview.single")
+            : t("saved.image_preview.many", files.length)}
         </div>
         <div className="w-10" />
       </div>
@@ -98,7 +102,7 @@ export default function SavedImagePreview({ files, open, onCancel, onSend, onRem
                     type="button"
                     onClick={() => onRemoveFile(idx)}
                     className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-500/90 text-white flex items-center justify-center"
-                    title="Видалити"
+                    title={t("saved.image_preview.remove")}
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -126,7 +130,7 @@ export default function SavedImagePreview({ files, open, onCancel, onSend, onRem
                   onSend(caption, files);
                 }
               }}
-              placeholder="Додати підпис..."
+              placeholder={t("saved.image_preview.caption_placeholder")}
               className="flex-1 bg-transparent text-[14.5px] text-white placeholder-gray-500 outline-none"
             />
           </div>
@@ -134,7 +138,7 @@ export default function SavedImagePreview({ files, open, onCancel, onSend, onRem
             type="button"
             onClick={() => onSend(caption, files)}
             className="flex-shrink-0 w-11 h-11 rounded-full bg-violet-500 hover:bg-violet-400 text-white flex items-center justify-center shadow-lg shadow-violet-500/20"
-            title="Надіслати"
+            title={t("saved.image_preview.send")}
           >
             <Send className="w-[18px] h-[18px] translate-x-[1px]" />
           </button>

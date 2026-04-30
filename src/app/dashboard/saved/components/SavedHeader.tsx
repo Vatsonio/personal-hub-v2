@@ -41,7 +41,7 @@ export default function SavedHeader({
         <button
           type="button"
           className="flex items-center gap-1.5 h-10 px-3 rounded-full bg-gray-900/85 backdrop-blur-md border border-white/5"
-          title="Назад"
+          title={t("saved.header.back")}
           onClick={() => window.history.back()}
         >
           <ArrowLeft className="w-4 h-4 text-gray-300" />
@@ -65,7 +65,7 @@ export default function SavedHeader({
           type="button"
           onClick={onSearch}
           className="w-10 h-10 rounded-full bg-gray-900/85 backdrop-blur-md border border-white/5 flex items-center justify-center"
-          title="Пошук"
+          title={t("saved.header.search")}
         >
           <Search className="w-4 h-4 text-gray-300" />
         </button>
@@ -78,7 +78,7 @@ export default function SavedHeader({
             onMore?.({ x: r.right, y: r.bottom + 6 });
           }}
           className="w-10 h-10 rounded-full bg-gray-900/85 backdrop-blur-md border border-white/5 flex items-center justify-center"
-          title="Більше"
+          title={t("saved.header.more")}
         >
           <MoreHorizontal className="w-4 h-4 text-gray-300" />
         </button>

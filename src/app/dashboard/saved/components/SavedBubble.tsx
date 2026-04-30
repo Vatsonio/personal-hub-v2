@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { Pin, Heart, Check, Bell, FileUp, ChevronUp, ChevronDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import LinkPreview from "./LinkPreview";
+import { useLocale } from "@/components/LocaleProvider";
 import type { SavedItem } from "@/types/domain";
 
 type Props = {
@@ -71,6 +72,7 @@ export default function SavedBubble({
   showReminderPicker = false,
   onCloseReminderPicker
 }: Props) {
+  const { t } = useLocale();
   const [showMdLocal, setShowMdLocal] = useState(false);
   const showMd = showMdProp ?? showMdLocal;
   const [swipeX, setSwipeX] = useState(0);
@@ -189,7 +191,7 @@ export default function SavedBubble({
           className={`flex-shrink-0 w-6 h-6 rounded-full border flex items-center justify-center transition-all ${
             isSelected ? "bg-violet-500 border-violet-500" : "border-gray-600 bg-transparent"
           }`}
-          title={isSelected ? "Зняти вибір" : "Вибрати"}
+          title={isSelected ? t("saved.bubble.deselect") : t("saved.bubble.select")}
         >
           {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
         </button>
@@ -213,7 +215,10 @@ export default function SavedBubble({
         {/* Reply quote */}
         {replyParent && (
           <div className="mb-1 pl-3 border-l-2 border-violet-400/50 text-xs text-gray-400 truncate">
-            ↩ {replyParent.title ?? replyParent.content?.slice(0, 60) ?? "…"}
+            ↩{" "}
+            {replyParent.title ??
+              replyParent.content?.slice(0, 60) ??
+              t("saved.bubble.reply_fallback")}
           </div>
         )}
 
@@ -270,7 +275,7 @@ export default function SavedBubble({
                 className="mt-1 flex items-center gap-1 text-[11px] text-gray-500 hover:text-gray-300 transition-colors"
               >
                 {showMd ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                {showMd ? "Сховати MD" : "MD preview"}
+                {showMd ? t("saved.bubble.hide_md") : t("saved.bubble.show_md")}
               </button>
             )}
           </div>
@@ -285,7 +290,7 @@ export default function SavedBubble({
               else onToggleSelect();
             }}
             className="block text-left w-full focus:outline-none"
-            title="Відкрити"
+            title={t("saved.bubble.open_image")}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -324,7 +329,9 @@ export default function SavedBubble({
             >
               <FileUp className="w-4 h-4 text-violet-300 flex-shrink-0" />
               <span className="truncate">
-                {(item.metadata as Record<string, string>)?.filename ?? item.title ?? "Файл"}
+                {(item.metadata as Record<string, string>)?.filename ??
+                  item.title ??
+                  t("saved.bubble.file_fallback")}
               </span>
               {(item.metadata as Record<string, string>)?.size && (
                 <span className="text-gray-500 text-[11px] ml-auto flex-shrink-0">
@@ -387,7 +394,7 @@ export default function SavedBubble({
       {/* Reminder picker */}
       {showReminderPicker && (
         <div className="absolute right-3 top-10 z-20 bg-gray-900 border border-white/10 rounded-xl p-3 shadow-xl flex flex-col gap-2 min-w-[200px]">
-          <p className="text-xs text-gray-400 font-medium">Нагадати</p>
+          <p className="text-xs text-gray-400 font-medium">{t("saved.bubble.remind")}</p>
           <input
             type="datetime-local"
             defaultValue={item.reminder_at ? item.reminder_at.slice(0, 16) : ""}
@@ -405,7 +412,7 @@ export default function SavedBubble({
               }}
               className="text-xs text-rose-400 hover:text-rose-300 text-left"
             >
-              Скасувати нагадування
+              {t("saved.bubble.cancel_reminder")}
             </button>
           )}
         </div>
