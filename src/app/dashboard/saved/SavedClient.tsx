@@ -16,6 +16,7 @@ import SavedConfirmDialog from "./components/SavedConfirmDialog";
 import SavedMoreMenu, { type MoreActionId } from "./components/SavedMoreMenu";
 import { useSavedItems } from "./hooks/useSavedItems";
 import { useSavedSearch } from "./hooks/useSavedSearch";
+import { useSavedShortcuts } from "./hooks/useSavedShortcuts";
 import type { SavedItem } from "@/types/domain";
 import { readSettings, SETTINGS_EVENT_NAME } from "@/lib/settings";
 import { useLocale } from "@/components/LocaleProvider";
@@ -129,6 +130,33 @@ export default function SavedClient({
   const [moreAnchor, setMoreAnchor] = useState<{ x: number; y: number } | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
+  // Hydrate sort dir from localStorage on mount
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem("saved-sort");
+      if (raw === "asc" || raw === "desc") setSortDir(raw);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  // Persist sort dir
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("saved-sort", sortDir);
+    } catch {
+      // ignore
+    }
+  }, [sortDir]);
+
+  // Toast for "link copied" feedback
+  const [toast, setToast] = useState<string | null>(null);
+  useEffect(() => {
+    if (!toast) return;
+    const id = setTimeout(() => setToast(null), 2000);
+    return () => clearTimeout(id);
+  }, [toast]);
+
   const handleMoreAction = useCallback(
     (id: MoreActionId) => {
       switch (id) {
@@ -206,6 +234,18 @@ export default function SavedClient({
         case "copy":
           handleCopy(item);
           break;
+        case "copy_link": {
+          const url = `${window.location.origin}${window.location.pathname}?bubble=${item.id}`;
+          (async () => {
+            try {
+              await navigator.clipboard.writeText(url);
+              setToast(t("saved.ctx.link_copied"));
+            } catch {
+              setToast(t("saved.ctx.link_copy_failed"));
+            }
+          })();
+          break;
+        }
         case "edit":
           setExpandedMdIds((prev) => {
             const next = new Set(prev);
@@ -260,6 +300,20 @@ export default function SavedClient({
     jumpToItemEl(id);
   }, []);
 
+  // Permalink to bubble: ?bubble=<id> on mount → scroll to that item.
+  // Decision: KEEP the param so a refresh re-jumps to the same bubble.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const bubbleId = params.get("bubble");
+    if (!bubbleId) return;
+    if (!items.some((i) => i.id === bubbleId)) return;
+    const t = setTimeout(() => jumpToItem(bubbleId), 300);
+    return () => clearTimeout(t);
+    // Run once after items first arrive — depend on items.length, not items, to avoid re-jumping on every change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.length]);
+
   const handleUnpinAll = useCallback(async () => {
     for (const p of pinned) {
       await updateItem(p.id, { is_pinned: false });
@@ -303,6 +357,32 @@ export default function SavedClient({
   }, [confirmDelete, deleteItem, refreshStorage, performBulkDelete]);
 
   const hasSelection = selectedIds.size > 0;
+
+  // Wire global keyboard shortcuts
+  useSavedShortcuts({
+    imagePreviewOpen: false,
+    confirmOpen: confirmDelete !== null,
+    attachOpen: false,
+    pinnedViewOpen,
+    moreOpen: moreAnchor !== null,
+    ctxOpen: ctx !== null,
+    searchOpen,
+    selectionMode: hasSelection,
+    onCloseImagePreview: () => {
+      /* owned by composer */
+    },
+    onCloseConfirm: () => setConfirmDelete(null),
+    onCloseAttach: () => {
+      /* owned by composer */
+    },
+    onClosePinnedView: () => setPinnedViewOpen(false),
+    onCloseMore: () => setMoreAnchor(null),
+    onCloseCtx: () => setCtx(null),
+    onCloseSearch: () => setSearchOpen(false),
+    onClearSelection: clearSelection,
+    onOpenSearch: () => setSearchOpen(true),
+    onSelectAllVisible: () => setSelectedIds(new Set(filtered.map((i) => i.id)))
+  });
 
   return (
     <>
@@ -480,6 +560,12 @@ export default function SavedClient({
         <div className="fixed bottom-20 right-4 z-40 text-xs text-gray-500 bg-gray-900/80 border border-white/5 rounded-full px-2 py-1 backdrop-blur-md">
           <Loader2 className="w-3 h-3 animate-spin inline mr-1" />
           {t("saved.search_loading")}
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed left-1/2 -translate-x-1/2 bottom-24 z-[80] text-xs text-gray-100 bg-gray-900/95 border border-white/10 rounded-full px-3 py-1.5 backdrop-blur-md shadow-lg">
+          {toast}
         </div>
       )}
     </>

@@ -13,7 +13,8 @@ import {
   FileText,
   FileDown,
   Trash2,
-  CheckCircle2
+  CheckCircle2,
+  Link2
 } from "lucide-react";
 import { useLocale } from "@/components/LocaleProvider";
 import type { SavedItem } from "@/types/domain";
@@ -22,6 +23,7 @@ export type CtxState = { x: number; y: number; item: SavedItem } | null;
 export type CtxActionId =
   | "reply"
   | "copy"
+  | "copy_link"
   | "edit"
   | "pin"
   | "favorite"
@@ -79,6 +81,7 @@ export default function SavedContextMenu({ ctx, onClose, onAction, onReact }: Pr
   const rows: (MenuRow | false)[] = [
     { id: "reply", label: t("saved.ctx.reply"), Icon: Reply },
     hasCopyableText && { id: "copy", label: t("saved.ctx.copy"), Icon: Copy },
+    { id: "copy_link", label: t("saved.ctx.copy_link"), Icon: Link2 },
     item.content_type === "text" && { id: "edit", label: t("saved.ctx.md_preview"), Icon: Edit3 },
     {
       id: "pin",

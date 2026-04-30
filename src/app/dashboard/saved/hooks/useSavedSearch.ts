@@ -10,15 +10,50 @@ type Filters = {
   tags: string[];
 };
 
+const FILTERS_KEY = "saved-filters";
+const DEFAULT_FILTERS: Filters = {
+  type: "all",
+  pinned: false,
+  favorite: false,
+  tags: []
+};
+
+function loadPersistedFilters(): Filters {
+  if (typeof window === "undefined") return DEFAULT_FILTERS;
+  try {
+    const raw = window.localStorage.getItem(FILTERS_KEY);
+    if (!raw) return DEFAULT_FILTERS;
+    const parsed = JSON.parse(raw) as Partial<Filters>;
+    return {
+      type: typeof parsed.type === "string" ? (parsed.type as Filters["type"]) : "all",
+      pinned: typeof parsed.pinned === "boolean" ? parsed.pinned : false,
+      favorite: typeof parsed.favorite === "boolean" ? parsed.favorite : false,
+      tags: Array.isArray(parsed.tags) ? parsed.tags.filter((t) => typeof t === "string") : []
+    };
+  } catch {
+    return DEFAULT_FILTERS;
+  }
+}
+
 export function useSavedSearch(items: SavedItem[]) {
   const [rawSearch, setRawSearch] = useState("");
   const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState<Filters>({
-    type: "all",
-    pinned: false,
-    favorite: false,
-    tags: []
-  });
+  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+
+  // Hydrate filters from localStorage on mount (client-only)
+  useEffect(() => {
+    setFilters(loadPersistedFilters());
+  }, []);
+
+  // Persist filters whenever they change
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(FILTERS_KEY, JSON.stringify(filters));
+    } catch {
+      // ignore quota / serialization errors
+    }
+  }, [filters]);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(rawSearch), 300);

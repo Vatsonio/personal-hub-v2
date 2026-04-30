@@ -164,6 +164,9 @@ export const translations = {
     // Context menu
     "saved.ctx.reply": "Відповісти",
     "saved.ctx.copy": "Копіювати",
+    "saved.ctx.copy_link": "Копіювати посилання",
+    "saved.ctx.link_copied": "Посилання скопійовано",
+    "saved.ctx.link_copy_failed": "Не вдалося скопіювати",
     "saved.ctx.md_preview": "MD preview",
     "saved.ctx.pin": "Прикріпити",
     "saved.ctx.unpin": "Відкріпити",
@@ -376,6 +379,9 @@ export const translations = {
     // Context menu
     "saved.ctx.reply": "Reply",
     "saved.ctx.copy": "Copy",
+    "saved.ctx.copy_link": "Copy link",
+    "saved.ctx.link_copied": "Link copied",
+    "saved.ctx.link_copy_failed": "Couldn't copy",
     "saved.ctx.md_preview": "MD preview",
     "saved.ctx.pin": "Pin",
     "saved.ctx.unpin": "Unpin",
