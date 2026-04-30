@@ -6,6 +6,11 @@ import { useLocale } from "@/components/LocaleProvider";
 import type { SavedItem, SavedContentType, CreateSavedItemInput } from "@/types/domain";
 import SavedAttachSheet, { type AttachPickId } from "./SavedAttachSheet";
 import SavedImagePreview from "./SavedImagePreview";
+import SavedVoiceRecorder from "./SavedVoiceRecorder";
+
+const DRAFT_STORAGE_KEY = "saved-draft";
+const DRAFT_DEBOUNCE_MS = 300;
+const DRAFT_BANNER_MS = 4000;
 
 type Props = {
   onAdd: (input: CreateSavedItemInput) => void;
@@ -44,6 +49,67 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
   const [captureMode, setCaptureMode] = useState<"environment" | null>(null);
   // Pending image previews (B2/B3): images selected but not uploaded yet
   const [pendingImages, setPendingImages] = useState<File[]>([]);
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
+  const draftHydratedRef = useRef(false);
+
+  // Hydrate draft from localStorage on mount (browser-only)
+  useEffect(() => {
+    if (draftHydratedRef.current) return;
+    draftHydratedRef.current = true;
+    if (typeof window === "undefined") return;
+    try {
+      const stored = window.localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (stored && stored.length > 0) {
+        setText(stored);
+        setDraftRestored(true);
+      }
+    } catch {
+      // localStorage may be unavailable (private mode, etc.) — ignore
+    }
+  }, []);
+
+  // Auto-dismiss draft-restored banner
+  useEffect(() => {
+    if (!draftRestored) return;
+    const t = setTimeout(() => setDraftRestored(false), DRAFT_BANNER_MS);
+    return () => clearTimeout(t);
+  }, [draftRestored]);
+
+  // Debounced persist of text → localStorage. Skips the very first run after
+  // hydration so we never overwrite a freshly-restored draft with an empty value.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!draftHydratedRef.current) return;
+    const t = setTimeout(() => {
+      try {
+        if (text && text.length > 0) {
+          window.localStorage.setItem(DRAFT_STORAGE_KEY, text);
+        } else {
+          window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+        }
+      } catch {
+        // ignore
+      }
+    }, DRAFT_DEBOUNCE_MS);
+    return () => clearTimeout(t);
+  }, [text]);
+
+  function clearDraft() {
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  function handleDismissDraft() {
+    clearDraft();
+    setText("");
+    setDraftRestored(false);
+  }
 
   // Auto-dismiss upload errors after 4 seconds
   useEffect(() => {
@@ -78,7 +144,7 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
     }
   }
 
-  // Attach-sheet pick — handles camera vs other types
+  // Attach-sheet pick — handles camera vs voice vs other types
   function handleAttachPick(picked: AttachPickId) {
     if (picked === "camera") {
       setType("image");
@@ -87,7 +153,48 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
       setTimeout(() => fileInputRef.current?.click(), 50);
       return;
     }
+    if (picked === "voice") {
+      setVoiceOpen(true);
+      return;
+    }
     handleTypeSelect(picked);
+  }
+
+  async function handleVoiceSubmit(data: { blob: Blob; mime: string; duration: number }) {
+    setUploading(true);
+    setUploadProgress(0);
+    setUploadError(null);
+    try {
+      const ext = data.mime.includes("ogg")
+        ? "ogg"
+        : data.mime.includes("mp4")
+          ? "m4a"
+          : data.mime.includes("mpeg")
+            ? "mp3"
+            : "webm";
+      const filename = `voice-${Date.now()}.${ext}`;
+      const file = new File([data.blob], filename, { type: data.mime });
+      const uploaded = await uploadOne(file);
+      const input: CreateSavedItemInput = {
+        content_type: "voice",
+        content: null,
+        source_url: uploaded.url,
+        title: `Голосове ${data.duration}s`,
+        tags: [],
+        reply_to: replyTo?.id ?? null,
+        metadata: { size: uploaded.size, duration: data.duration, mime: data.mime }
+      };
+      onAdd(input);
+      onUploadDone?.();
+      onCancelReply();
+      setVoiceOpen(false);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed");
+      throw err;
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
   }
 
   // Upload a single file via the API. Returns metadata or throws.
@@ -212,6 +319,8 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
 
     onAdd(input);
     setText("");
+    clearDraft();
+    setDraftRestored(false);
     onCancelReply();
     textareaRef.current?.focus();
   }
@@ -306,6 +415,36 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
         onPick={(picked) => handleAttachPick(picked)}
       />
 
+      <SavedVoiceRecorder
+        open={voiceOpen}
+        onClose={() => setVoiceOpen(false)}
+        onSubmit={handleVoiceSubmit}
+      />
+
+      {/* Draft restored banner */}
+      {draftRestored && (
+        <div className="flex items-center gap-2 mb-2 px-3 py-1.5 bg-violet-500/10 border border-violet-500/20 rounded-xl text-xs text-violet-300">
+          <span className="flex-1 truncate">
+            Чернетку відновлено ·{" "}
+            <button
+              type="button"
+              onClick={handleDismissDraft}
+              className="underline hover:text-white"
+            >
+              Видалити
+            </button>
+          </span>
+          <button
+            type="button"
+            onClick={() => setDraftRestored(false)}
+            className="hover:text-white"
+            title="Закрити"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Upload hint or text input */}
       {isUploadMode ? (
         <button
@@ -361,6 +500,7 @@ export default function SavedComposer({ onAdd, onUploadDone, replyTo, onCancelRe
           <button
             onClick={() => {
               if (text.trim()) handleSubmit();
+              else setVoiceOpen(true);
             }}
             className={`flex-shrink-0 relative w-11 h-11 rounded-full border flex items-center justify-center transition-colors ${
               text.trim()
